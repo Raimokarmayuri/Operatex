@@ -1,0 +1,97 @@
+.parameter-row {
+    margin-bottom: 10px;
+    background-color: #f1f1f1;
+    border-radius: 8px;
+ 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.parameter-icon {
+    font-size: 20px; /* Increase icon size */
+    color: #007bff; /* Icon color */
+}
+
+.parameter-value {
+    font-weight: bold;
+    font-size: 18px; /* Increase text size */
+    
+}
+
+.status-good,
+.status-warning,
+.status-danger {
+    padding: 1px 8px;
+    border-radius: 5px;
+    font-weight: bold; /* Make text bold */
+    font-size: 18px; /* Increase text size */
+    display: inline-block; /* Prevent text overflow */
+}
+
+.status-good {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.status-warning {
+    background-color: #ffc107;
+    color: #fff;
+}
+
+.status-danger {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.span-selection h5 {
+    font-size: 28px; /* Increase header size */
+    font-weight: bold; /* Make header bold */
+}
+
+.span-selection button {
+    margin: 5px;
+    font-size: 20px; /* Increase button font size */
+    font-weight: bold; /* Make button text bold */
+}
+
+.footer-buttons {
+    text-align: center;
+    margin-top: 10px;
+}
+
+
+.text-center1 {
+text-align: center !important;
+height: 1rem;
+
+}
+.footer-buttons button {
+    margin: 5px;
+    font-size: 20px; /* Increase button font size */
+    font-weight: bold; /* Make button text bold */
+}
+
+.parameter-image {
+    width: 60px;
+    height: 60px;
+}
+
+.popup {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: white;
+    border: 1px solid black;
+    padding: 10px;
+    z-index: 1000; /* Make sure it appears above other content */
+  }
+  
+
+.parameter-label {
+    background-color: #82bcfa;
+    color: #fff;
+    /* padding: 1px 8px; */
+    border-radius: 5px;
+    font-size: 18px;
+    display: inline-block;
+    width: 100%;
+}
