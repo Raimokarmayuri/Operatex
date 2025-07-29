@@ -435,23 +435,39 @@ const DrillDownDowntimeChart = () => {
     },
   ];
 
-   const handleEdit = (downtime) => {
-    setFormData({
-      ...downtime,
-      start_timestamp: downtime.start_timestamp
-        ? new Date(downtime.start_timestamp).toISOString().slice(0, 16)
-        : "",
-      end_timestamp: downtime.end_timestamp
-        ? new Date(downtime.end_timestamp).toISOString().slice(0, 16)
-        : "",
-      date: downtime.date
-        ? new Date(downtime.date).toISOString().split("T")[0]
-        : "",
-    });
-    setEditId(downtime.id);
-    setIsEditMode(true);
-    setShowForm(true);
+const handleEdit = (downtime) => {
+  const formatDateTimeLocal = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  setFormData({
+    ...downtime,
+    start_timestamp: formatDateTimeLocal(downtime.start_timestamp),
+    end_timestamp: formatDateTimeLocal(downtime.end_timestamp),
+    date: formatDate(downtime.date),
+  });
+
+  setEditId(downtime.id);
+  setIsEditMode(true);
+  setShowForm(true);
+};
+
 
     const handleFormSubmit = async (e) => {
       e.preventDefault();
