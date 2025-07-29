@@ -19,8 +19,12 @@ const PmcParameter = () => {
     max_value: null,
     unit: null,
     alert_threshold: null,
-    ok:"",
     data_collection_frequency: "",
+    // New fields
+    data_type: "",
+    ok: "",
+    bit_position: "",
+    parameter_value: "",
   });
 
   // Fetch all PMC parameters
@@ -52,81 +56,91 @@ const PmcParameter = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  const isBoolean = form.boolean_expected_value === "1";
+    const isBoolean = form.boolean_expected_value === "1";
 
-  // Basic required
-  if (form.parameter_name.trim().length < 3) {
-    return alert("Parameter Name must be at least 3 characters.");
-  }
-
-  if (isBoolean) {
-    if (
-      form.min_value ||
-      form.max_value ||
-      form.alert_threshold ||
-      form.unit
-    ) {
-      return alert("For Boolean type, analog fields must be empty.");
-    }
-  } else {
-    if (
-      !form.min_value ||
-      !form.max_value ||
-      !form.unit ||
-      !form.alert_threshold
-    ) {
-      return alert("For Analog type, all analog fields are required.");
+    // Basic required
+    if (form.parameter_name.trim().length < 3) {
+      return alert("Parameter Name must be at least 3 characters.");
     }
 
-    const min = parseFloat(form.min_value);
-    const max = parseFloat(form.max_value);
-    const threshold = parseFloat(form.alert_threshold);
-    if (threshold < min || threshold > max) {
-      return alert("Alert threshold must be between min and max.");
-    }
-  }
+    if (isBoolean) {
+      if (
+        form.min_value ||
+        form.max_value ||
+        form.alert_threshold ||
+        form.unit
+      ) {
+        return alert("For Boolean type, analog fields must be empty.");
+      }
+    } else {
+      if (
+        !form.min_value ||
+        !form.max_value ||
+        !form.unit ||
+        !form.alert_threshold
+      ) {
+        return alert("For Analog type, all analog fields are required.");
+      }
 
-  // Prepare payload
-  const payload = {
-    ...form,
-    machine_id: Number(form.machine_id),
-    boolean_expected_value: isBoolean ? true : null,
-    min_value: form.min_value ? parseFloat(form.min_value) : null,
-    max_value: form.max_value ? parseFloat(form.max_value) : null,
-    alert_threshold: form.alert_threshold
-      ? parseFloat(form.alert_threshold)
-      : null,
-    unit: form.unit || null,
-    data_collection_frequency: form.data_collection_frequency || null,
+      const min = parseFloat(form.min_value);
+      const max = parseFloat(form.max_value);
+      const threshold = parseFloat(form.alert_threshold);
+      if (threshold < min || threshold > max) {
+        return alert("Alert threshold must be between min and max.");
+      }
+    }
+
+    // Prepare payload
+    const payload = {
+      ...form,
+      machine_id: Number(form.machine_id),
+      boolean_expected_value: isBoolean ? true : null,
+      min_value: form.min_value ? parseFloat(form.min_value) : null,
+      max_value: form.max_value ? parseFloat(form.max_value) : null,
+      alert_threshold: form.alert_threshold
+        ? parseFloat(form.alert_threshold)
+        : null,
+      unit: form.unit || null,
+      data_collection_frequency: form.data_collection_frequency || null,
+      data_type: form.data_type || null,
+      ok: form.ok || null,
+      bit_position: form.bit_position || null,
+      parameter_value: form.parameter_value || null,
+    };
+
+    try {
+      if (editingId) {
+        await axios.put(
+          `${API_BASE_URL}/api/pmc-parameters/${editingId}`,
+          payload
+        );
+        alert("Parameter updated");
+      } else {
+        await axios.post(`${API_BASE_URL}/api/pmc-parameters`, payload);
+        alert("Parameter created");
+      }
+
+      resetForm();
+      fetchParameters();
+    } catch (err) {
+      console.error("Error saving:", err);
+      alert("Error saving data");
+    }
   };
 
-  try {
-    if (editingId) {
-      await axios.put(
-        `${API_BASE_URL}/api/pmc-parameters/${editingId}`,
-        payload
-      );
-      alert("Parameter updated");
-    } else {
-      await axios.post(`${API_BASE_URL}/api/pmc-parameters`, payload);
-      alert("Parameter created");
-    }
-
-    resetForm();
-    fetchParameters();
-  } catch (err) {
-    console.error("Error saving:", err);
-    alert("Error saving data");
-  }
-};
-
-
-
   const handleEdit = (param) => {
-    setForm(param);
+    setForm({
+      ...param,
+      data_type: param.data_type || "",
+      ok: param.ok || "",
+      bit_position: param.bit_position || "",
+      parameter_value: param.parameter_value || "",
+      boolean_expected_value:
+        param.boolean_expected_value === true ? "1" : "",
+    });
     setEditingId(param.pmc_parameter_id);
     setShowForm(true);
   };
@@ -141,7 +155,6 @@ const handleSubmit = async (e) => {
   const resetForm = () => {
     setForm({
       machine_id: "",
-          ok:"",
       parameter_name: "",
       register_address: "",
       boolean_expected_value: "",
@@ -150,6 +163,10 @@ const handleSubmit = async (e) => {
       unit: "",
       alert_threshold: "",
       data_collection_frequency: "",
+      data_type: "",
+      ok: "",
+      bit_position: "",
+      parameter_value: "",
     });
     setEditingId(null);
     setShowForm(false);
@@ -182,6 +199,9 @@ const handleSubmit = async (e) => {
               <th style={{ color: "#034694" }}>Unit</th>
               <th style={{ color: "#034694" }}>Threshold</th>
               <th style={{ color: "#034694" }}>Frequency</th>
+              <th style={{ color: "#034694" }}>Data Type</th>
+              <th style={{ color: "#034694" }}>Bit Position</th>
+              <th style={{ color: "#034694" }}>Parameter Value</th>
               <th style={{ color: "#034694" }}>Actions</th>
             </tr>
           </thead>
@@ -208,6 +228,9 @@ const handleSubmit = async (e) => {
                   <td>{p.unit}</td>
                   <td>{p.alert_threshold}</td>
                   <td>{p.data_collection_frequency}</td>
+                  <td>{p.data_type}</td>
+                  <td>{p.bit_position}</td>
+                  <td>{p.parameter_value}</td>
                   <td>
                     <button
                       className="btn btn-sm text-primary"
@@ -226,7 +249,7 @@ const handleSubmit = async (e) => {
               ))
             ) : (
               <tr>
-                <td colSpan="10" className="text-center">
+                <td colSpan="14" className="text-center">
                   No parameters found
                 </td>
               </tr>
@@ -278,49 +301,41 @@ const handleSubmit = async (e) => {
             />
           </div>
 
-         <div className="col-md-4">
-  <label className="form-label">Is Boolean Parameter?</label>
-  <div className="form-check">
-    <input
-      className="form-check-input"
-      type="checkbox"
-      id="isBooleanCheckbox"
-      checked={form.boolean_expected_value === "1"}
-      onChange={(e) =>
-        setForm((prev) => ({
-          ...prev,
-          boolean_expected_value: e.target.checked ? "1" : "",
-          min_value: "",
-          max_value: "",
-          unit: "",
-          alert_threshold: "",
-        }))
-      }
-    />
-    <label className="form-check-label" htmlFor="isBooleanCheckbox">
-      Expected Boolean Value (True)
-    </label>
-  </div>
-</div>
-
+          <div className="col-md-4">
+            <label className="form-label">Is Boolean Parameter?</label>
+            <div className="form-check">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="isBooleanCheckbox"
+                checked={form.boolean_expected_value === "1"}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    boolean_expected_value: e.target.checked ? "1" : "",
+                    min_value: "",
+                    max_value: "",
+                    unit: "",
+                    alert_threshold: "",
+                  }))
+                }
+              />
+              <label className="form-check-label" htmlFor="isBooleanCheckbox">
+                Expected Boolean Value (True)
+              </label>
+            </div>
+          </div>
 
           <div className="col-md-4">
             <label className="form-label">Min Value</label>
-            {/* <input
-              type="number"
-              className="form-control"
-              name="min_value"
-              value={form.min_value}
-              onChange={handleChange}
-            /> */}
             <input
               type="number"
               className="form-control"
               name="min_value"
               value={form.min_value}
               onChange={handleChange}
-               disabled={form.boolean_expected_value === "1"}
-  required={form.boolean_expected_value !== "1"}
+              disabled={form.boolean_expected_value === "1"}
+              required={form.boolean_expected_value !== "1"}
             />
           </div>
 
@@ -332,28 +347,27 @@ const handleSubmit = async (e) => {
               name="max_value"
               value={form.max_value}
               onChange={handleChange}
-               disabled={form.boolean_expected_value === "1"}
-  required={form.boolean_expected_value !== "1"}
+              disabled={form.boolean_expected_value === "1"}
+              required={form.boolean_expected_value !== "1"}
             />
           </div>
 
           <div className="col-md-4">
             <label className="form-label">Unit</label>
-           <select
-  name="unit"
-  className="form-control"
-  value={form.unit}
-  onChange={handleChange}
-  disabled={form.boolean_expected_value === "1"}
->
-  <option value="">Select Unit</option>
-  <option value="°C">°C</option>
-  <option value="%">%</option>
-  <option value="mm/s">mm/s</option>
-  <option value="bar">bar</option>
-  <option value="V">V</option>
-</select>
-
+            <select
+              name="unit"
+              className="form-control"
+              value={form.unit}
+              onChange={handleChange}
+              disabled={form.boolean_expected_value === "1"}
+            >
+              <option value="">Select Unit</option>
+              <option value="°C">°C</option>
+              <option value="%">%</option>
+              <option value="mm/s">mm/s</option>
+              <option value="bar">bar</option>
+              <option value="V">V</option>
+            </select>
           </div>
 
           <div className="col-md-4">
@@ -364,25 +378,83 @@ const handleSubmit = async (e) => {
               name="alert_threshold"
               value={form.alert_threshold}
               onChange={handleChange}
-               disabled={form.boolean_expected_value === "1"}
-  required={form.boolean_expected_value !== "1"}
+              disabled={form.boolean_expected_value === "1"}
+              required={form.boolean_expected_value !== "1"}
             />
           </div>
 
           <div className="col-md-4">
             <label className="form-label">Data Collection Frequency</label>
             <select
-  name="data_collection_frequency"
-  className="form-control"
-  value={form.data_collection_frequency}
-  onChange={handleChange}
->
-  <option value="">Select Frequency</option>
-  <option value="real-time">Real-time</option>
-  <option value="1-min">1-min</option>
-  <option value="hourly">Hourly</option>
-</select>
+              name="data_collection_frequency"
+              className="form-control"
+              value={form.data_collection_frequency}
+              onChange={handleChange}
+            >
+              <option value="">Select Frequency</option>
+              <option value="real-time">Real-time</option>
+              <option value="1-min">1-min</option>
+              <option value="hourly">Hourly</option>
+            </select>
           </div>
+
+          {/* New fields */}
+          <div className="col-md-4">
+            <label className="form-label">Data Type</label>
+            <select
+              name="data_type"
+              className="form-control"
+              value={form.data_type}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select Data Type</option> 
+              <option value="bit">Bit</option>
+              <option value="byte">Byte</option>
+              <option value="boolean">Boolean</option>
+              {/* <option value="analog">Analog</option>
+              <option value="digital">Digital</option> */}
+              <option value="string">String</option>
+              {/* Add more as needed */}
+            </select>
+          </div>
+
+                   <div className="col-md-4">
+            <label className="form-label">Ok</label>
+            <select
+              className="form-control"
+              name="ok"
+              value={form.ok}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select Ok Value</option>
+              <option value="1">1</option>
+              <option value="0">0</option>
+            </select>
+          </div>
+
+          <div className="col-md-4">
+            <label className="form-label">Bit Position</label>
+            <input
+              type="number"
+              className="form-control"
+              name="bit_position"
+              value={form.bit_position}
+              onChange={handleChange}
+            />
+          </div>
+
+          {/* <div className="col-md-4">
+            <label className="form-label">Parameter Value</label>
+            <input
+              type="text"
+              className="form-control"
+              name="parameter_value"
+              value={form.parameter_value}
+              onChange={handleChange}
+            />
+          </div> */}
 
           <div className="col-12">
             <button type="submit" className="btn btn-success me-2">

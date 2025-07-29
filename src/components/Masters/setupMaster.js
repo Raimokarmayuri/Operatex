@@ -149,6 +149,8 @@ const handleSave = async (index) => {
     const updatedRows = [...setupRows];
     updatedRows.splice(index, 1);
     setSetupRows(updatedRows);
+    console.log("Saving row:", row);
+console.log("Payload:", payload);
   } catch (error) {
     console.error("Error saving setup:", error);
     alert("Error saving setup. See console for details.");
@@ -164,15 +166,31 @@ const handleSave = async (index) => {
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this setup?")) {
-      await axios.delete(`${API_BASE_URL}/api/setups/${id}`);
+      await axios.delete(`${API_BASE_URL}/api/setups/setups/${id}`);
       fetchData();
     }
   };
 
-  const handleEdit = (id) => {
-    setEditingRowId(id);
-    setSetupRows(setups.filter((s) => s.setup_id === id));
-  };
+const handleEdit = (id) => {
+  const editRow = setups.find((s) => s.setup_id === id);
+  if (editRow) {
+    const prefilled = {
+      ...editRow,
+      spec_target_value: editRow.spec_target_value || '',
+      spec_min_tolerance: editRow.spec_min_tolerance || '',
+      spec_max_tolerance: editRow.spec_max_tolerance || '',
+      unit: editRow.unit || '',
+      parameters: editRow.parameters || '',
+      specifications: editRow.specifications || '',
+      inspection_method: editRow.inspection_method || '',
+    };
+    setSetupRows([prefilled]);  // overwrite all for single row edit
+    setEditingRowId(id);        // track edited row'
+    
+  }
+};
+
+
 
 //   const handleEdit = (id) => {
 //   const editRow = setups.find(s => s.setup_id === id);
@@ -222,17 +240,18 @@ const handleSave = async (index) => {
       </div>
 
       <div className="table-responsive" style={{ overflowX: "auto" }}>
-        <table className="table table-bordered mt-4">
+                <table className="table table-bordered" >
+
           <thead>
             <tr>
-              <th style={{ color: "#034694" }}>Part</th>
-              <th style={{ color: "#034694" }}>Machine</th>
+              <th style={{ color: "#034694"}}>PartName</th>
+              <th style={{ color: "#034694" }}>MachineName</th>
               <th style={{ color: "#034694" }}>Process</th>
               <th style={{ color: "#034694" }}>StepNo</th>
               <th style={{ color: "#034694" }}>Checklist_Description</th>
-               <th style={{ color: "#034694" }}>parameter</th>
-                <th style={{ color: "#034694" }}>specification</th>
-                 <th style={{ color: "#034694" }}>inspection_method</th>
+              <th style={{ color: "#034694" }}>parameter</th>
+              <th style={{ color: "#034694" }}>specification</th>
+              <th style={{ color: "#034694" }}>inspection_method</th>
               <th style={{ color: "#034694" }}>Type</th>
               <th style={{ color: "#034694" }}>boolean_expected_value</th>
               <th style={{ color: "#034694" }}>Targetvalue</th>
@@ -253,6 +272,7 @@ const handleSave = async (index) => {
                   <td>
                     <select
                       className="form-control"
+                      style={{ width: "150px" }}
                       value={row.part_id}
                       onChange={(e) =>
                         handleRowChange(index, "part_id", e.target.value)
@@ -269,6 +289,7 @@ const handleSave = async (index) => {
                   <td>
                     <select
                       className="form-control"
+                      style={{ width: "150px" }}
                       value={row.machine_id}
                       onChange={(e) =>
                         handleRowChange(index, "machine_id", e.target.value)
@@ -286,6 +307,7 @@ const handleSave = async (index) => {
                     <select
                       className="form-control"
                       value={row.process_id}
+                      style={{ width: "150px" }}
                       onChange={(e) =>
                         handleRowChange(index, "process_id", e.target.value)
                       }
@@ -301,6 +323,7 @@ const handleSave = async (index) => {
                   <td>
                     <input
                       type="number"
+                      style={{ width: "150px" }}
                       className="form-control"
                       value={row.step_no}
                       onChange={(e) =>
@@ -311,6 +334,7 @@ const handleSave = async (index) => {
                   <td>
                     <input
                       type="text"
+                      style={{ width: "150px" }}
                       className="form-control"
                       value={row.checklist_item_description}
                       onChange={(e) =>
@@ -325,28 +349,22 @@ const handleSave = async (index) => {
                   <td>
                     <input
                       type="text"
+                      style={{ width: "150px" }}
                       className="form-control"
                       value={row.parameters}
                       onChange={(e) =>
-                        handleRowChange(
-                          index,
-                          "parameters",
-                          e.target.value
-                        )
+                        handleRowChange(index, "parameters", e.target.value)
                       }
                     />
                   </td>
                   <td>
                     <input
                       type="text"
+                      style={{ width: "150px" }}
                       className="form-control"
                       value={row.specifications}
                       onChange={(e) =>
-                        handleRowChange(
-                          index,
-                          "specifications",
-                          e.target.value
-                        )
+                        handleRowChange(index, "specifications", e.target.value)
                       }
                     />
                   </td>
@@ -368,6 +386,7 @@ const handleSave = async (index) => {
                     <select
                       className="form-control"
                       value={row.type}
+                      style={{ width: "150px" }}
                       onChange={(e) =>
                         handleRowChange(index, "type", e.target.value)
                       }
@@ -397,6 +416,7 @@ const handleSave = async (index) => {
                       <td>
                         <input
                           type="number"
+                          style={{ width: "150px" }}
                           className="form-control"
                           value={row.spec_target_value}
                           onChange={(e) =>
@@ -411,6 +431,7 @@ const handleSave = async (index) => {
                       <td>
                         <input
                           type="number"
+                          style={{ width: "150px" }}
                           className="form-control"
                           value={row.spec_min_tolerance}
                           onChange={(e) =>
@@ -425,6 +446,7 @@ const handleSave = async (index) => {
                       <td>
                         <input
                           type="number"
+                          style={{ width: "150px" }}
                           className="form-control"
                           value={row.spec_max_tolerance}
                           onChange={(e) =>
@@ -439,6 +461,7 @@ const handleSave = async (index) => {
                       <td>
                         <select
                           className="form-control"
+                          style={{ width: "150px" }}
                           value={row.unit}
                           onChange={(e) =>
                             handleRowChange(index, "unit", e.target.value)
@@ -459,6 +482,7 @@ const handleSave = async (index) => {
                   <td>
                     <select
                       className="form-control"
+                      style={{ width: "150px" }}
                       value={row.validation_method}
                       onChange={(e) =>
                         handleRowChange(
@@ -486,6 +510,7 @@ const handleSave = async (index) => {
                   <td>
                     <input
                       type="number"
+                      style={{ width: "150px" }}
                       className="form-control"
                       value={row.production_part_count}
                       onChange={(e) =>
@@ -500,6 +525,7 @@ const handleSave = async (index) => {
                   <td>
                     <input
                       type="number"
+                      style={{ width: "150px" }}
                       className="form-control"
                       value={row.quality_part_count}
                       onChange={(e) =>
@@ -526,17 +552,16 @@ const handleSave = async (index) => {
                     </button>
                   </td>
                 </tr>
-                
               </React.Fragment>
             ))}
 
             {filteredSetups.map((s) => (
               <tr key={`existing-${s.setup_id}`}>
-                <td>
+                <td style={{ width: "250px" }}>
                   {partList.find((p) => p.part_id === s.part_id)?.part_name ||
                     s.part_id}
                 </td>
-                <td>
+                <td style={{ width: "150px" }}>
                   {machineList.find((m) => m.machine_id === s.machine_id)
                     ?.machine_name_type || s.machine_id}
                 </td>
@@ -544,21 +569,23 @@ const handleSave = async (index) => {
                   {processList.find((p) => p.process_id === s.process_id)
                     ?.program_no || s.process_id}
                 </td>
-                <td>{s.step_no}</td>
-                <td>{s.checklist_item_description}</td>
-                <td>{s.parameters}</td>
-                <td>{s.specifications}</td>
-                <td>{s.inspection_method}</td>
-                <td>{s.type}</td>
+                <td style={{ width: "150px" }}>{s.step_no}</td>
+                <td style={{ width: "150px" }}>
+                  {s.checklist_item_description}
+                </td>
+                <td style={{ width: "150px" }}>{s.parameters}</td>
+                <td style={{ width: "150px" }}>{s.specifications}</td>
+                <td style={{ width: "150px" }}>{s.inspection_method}</td>
+                <td style={{ width: "150px" }}>{s.type}</td>
                 <td>{s.boolean_expected_value ? "Yes" : "No"}</td>
-                <td>{s.spec_target_value}</td>
-                <td>{s.spec_min_tolerance}</td>
-                <td>{s.spec_max_tolerance}</td>
-                <td>{s.unit}</td>
-                <td>{s.validation_method}</td>
-                <td>{s.mandatory ? "Yes" : "No"}</td>
-                <td>{s.production_part_count}</td>
-                <td>{s.quality_part_count}</td>
+                <td style={{ width: "150px" }}>{s.spec_target_value}</td>
+                <td style={{ width: "150px" }}>{s.spec_min_tolerance}</td>
+                <td style={{ width: "150px" }}>{s.spec_max_tolerance}</td>
+                <td style={{ width: "150px" }}>{s.unit}</td>
+                <td style={{ width: "150px" }}>{s.validation_method}</td>
+                <td style={{ width: "150px" }}>{s.mandatory ? "Yes" : "No"}</td>
+                <td style={{ width: "150px" }}>{s.production_part_count}</td>
+                <td style={{ width: "150px" }}>{s.quality_part_count}</td>
                 <td>
                   <button
                     className="btn btn-sm btn-outline-primary me-2"

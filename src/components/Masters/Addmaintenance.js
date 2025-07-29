@@ -7,7 +7,7 @@ import API_BASE_URL from "../config";
 // const API_BASE_URL = "http://localhost:5003";
 
 const MaintenanceScheduleForm = () => {
-  const machineId = localStorage.getItem("selectedMachineId");
+  // const machineId = localStorage.getItem("selectedMachineId");
   const [schedules, setSchedules] = useState([]);
   const [pmcOptions, setPmcOptions] = useState([]);
   const getTodayDate = () => {
@@ -27,7 +27,7 @@ const MaintenanceScheduleForm = () => {
     pmc_parameter_id: "",
     is_critical: false,
     estimated_duration_mins: "",
-    assigned_role: "",
+    // assigned_role: "",
     status: "",
     documentation: "",
     auto_alert_required: false,
@@ -127,7 +127,7 @@ const MaintenanceScheduleForm = () => {
       const updatedData = {
         ...prevData,
         [name]: value,
-        machineId: prevData.machine_id || machineId, // Ensure machineId is preserved
+        machineId: prevData.machine_id, // Ensure machineId is preserved
       };
 
       // Dynamically calculate next_schedule_date if frequency or pmScheduleDate changes
@@ -160,13 +160,29 @@ const MaintenanceScheduleForm = () => {
 
     const dataToSave = {
       ...formData,
+      machine_id: Number(formData.machine_id), // ✅ restore and sanitize
       last_calendar_date: sanitize(formData.last_calendar_date),
-      last_count: sanitize(formData.last_count),
-      next_count: sanitize(formData.next_count),
       estimated_duration_mins: sanitize(formData.estimated_duration_mins),
       next_schedule_date,
-      machine_id: formData.machine_id || machineId,
+      maintenance_type: formData.maintenance_type || "",
+      maintenance_name: formData.maintenance_name || "",
+      frequency: formData.frequency || "",
+      trigger_type: formData.trigger_type || "",
+      pmc_parameter_id: formData.pmc_parameter_id || null,
+      is_critical: formData.is_critical || false,
+      status: formData.status || "",
+      documentation: formData.documentation || "",
+      auto_alert_required: formData.auto_alert_required || false,
+      escalation_level: formData.escalation_level || "",
+      pm_schedule_date: formData.pm_schedule_date || "",
     };
+
+    if (formData.maintenance_type === "CBM" && !formData.pmc_parameter_id) {
+      setAlertMessage("PMC Parameter is required for CBM type.");
+      setAlertType("danger");
+      return;
+    }
+    console.log("Submitting dataToSave:", dataToSave);
 
     try {
       if (isEditing) {
@@ -201,12 +217,12 @@ const MaintenanceScheduleForm = () => {
       trigger_type: "", // "calendar" or "counter"
       last_calendar_date: "",
       // next_cycle: "",
-      last_count: "",
-      next_count: "",
+      // last_count: "",
+      // next_count: "",
       pmc_parameter_id: "",
       // is_critical: false,
       estimated_duration_mins: "",
-      assigned_role: "",
+      // assigned_role: "",
       status: "",
       documentation: "",
       // auto_alert_required: false,
@@ -222,20 +238,19 @@ const MaintenanceScheduleForm = () => {
   };
 
   const handleEditClick = (schedule) => {
-  setFormData({
-    machine_id: schedule.machine_id,
-    maintenance_name: schedule.maintenance_name || "",
-    maintenance_type: schedule.maintenance_type || "",
-    frequency: schedule.frequency || "",
-    trigger_type: schedule.trigger_type || "",
-    pmc_parameter_id: schedule.pmc_parameter_id || "",
-    next_schedule_date: schedule.next_schedule_date || "",
-    status: schedule.status || "",
-  });
-  setEditId(schedule.maintenance_id);
-  setShowModal(true);
-};
-
+    setFormData({
+      machine_id: schedule.machine_id,
+      maintenance_name: schedule.maintenance_name || "",
+      maintenance_type: schedule.maintenance_type || "",
+      frequency: schedule.frequency || "",
+      trigger_type: schedule.trigger_type || "",
+      pmc_parameter_id: schedule.pmc_parameter_id || "",
+      next_schedule_date: schedule.next_schedule_date || "",
+      status: schedule.status || "",
+    });
+    setEditId(schedule.maintenance_id);
+    setShowModal(true);
+  };
 
   const handleDelete = async (maintenance_id) => {
     if (window.confirm("Are you sure you want to delete this schedule?")) {
@@ -344,7 +359,7 @@ const MaintenanceScheduleForm = () => {
   };
 
   return (
-    <div className="" style={{ marginTop: "3rem" }}>
+    <div className="ms-3" style={{ marginTop: "3rem" }}>
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2 mb-2 p-2 border rounded bg-light">
         {/* Left side: Title */}
         <div className="fs-4 fw-bold" style={{ color: "#034694" }}>
@@ -416,12 +431,12 @@ const MaintenanceScheduleForm = () => {
             <div className="col-md-4 mb-3">
               <label className="form-label">Machine ID</label>
               <Select
+                required
                 options={machineIds}
                 value={machineIds.find((m) => m.value === formData.machine_id)}
                 onChange={(option) =>
                   setFormData({ ...formData, machine_id: option.value })
                 }
-                placeholder="Select Machine"
               />
             </div>
             <div className="col-md-4 mb-3">
@@ -507,7 +522,7 @@ const MaintenanceScheduleForm = () => {
                 onChange={handleInputChange}
               />
             </div>
-            <div className="col-md-4 mb-3">
+            {/* <div className="col-md-4 mb-3">
               <label className="form-label">Assigned Role</label>
               <input
                 type="text"
@@ -516,7 +531,7 @@ const MaintenanceScheduleForm = () => {
                 value={formData.assigned_role}
                 onChange={handleInputChange}
               />
-            </div>
+            </div> */}
           </div>
           <div className="row">
             {/* <div className="col-md-4 mb-3">
@@ -630,13 +645,17 @@ const MaintenanceScheduleForm = () => {
                 {" "}
                 {/* Reduce row height */}
                 <th style={{ padding: "8px", color: "#034694" }}>MachineID</th>
-                <th style={{ padding: "8px", color: "#034694" }}>Maintenance Name</th>
+                <th style={{ padding: "8px", color: "#034694" }}>
+                  Maintenance Name
+                </th>
                 {/* <th style={{ padding: "8px" }}>Element Description</th> */}
                 <th style={{ padding: "8px", color: "#034694" }}>Type</th>
                 <th style={{ padding: "8px", color: "#034694" }}>Frequency</th>
                 {/* <th style={{ padding: "8px" }}>Maintenance Parameter</th> */}
                 {/* <th style={{ padding: "8px" }}>Date</th> */}
-                <th style={{ padding: "8px", color: "#034694" }}>Next Schedule Date</th>
+                <th style={{ padding: "8px", color: "#034694" }}>
+                  Next Schedule Date
+                </th>
                 <th style={{ padding: "8px", color: "#034694" }}>Status</th>
                 <th style={{ padding: "8px", color: "#034694" }}>Actions</th>
               </tr>
@@ -647,9 +666,13 @@ const MaintenanceScheduleForm = () => {
                   {" "}
                   {/* Reduce row height */}
                   <td style={{ padding: "8px" }}>{schedule.machine_id}</td>
-                  <td style={{ padding: "8px" }}>{schedule.maintenance_name}</td>
+                  <td style={{ padding: "8px" }}>
+                    {schedule.maintenance_name}
+                  </td>
                   {/* <td style={{ padding: "8px" }}>{schedule.elementDescription}</td> */}
-                  <td style={{ padding: "8px" }}>{schedule.maintenance_type}</td>
+                  <td style={{ padding: "8px" }}>
+                    {schedule.maintenance_type}
+                  </td>
                   <td style={{ padding: "8px" }}>{schedule.frequency}</td>
                   {/* <td style={{ padding: "8px" }}>{schedule.conditionTag}</td> */}
                   {/* <td style={{ padding: "8px" }}>
@@ -694,8 +717,7 @@ const MaintenanceScheduleForm = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
-                  Edit Schedule Status for Machine{" "}
-                  {formData.machine_id || machineId}
+                  Edit Schedule Status for Machine {formData.machine_id}
                 </h5>
                 <button
                   type="button"

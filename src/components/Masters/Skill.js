@@ -94,7 +94,7 @@ const fetchDropdowns = async () => {
   try {
     const [usersRes, machinesRes] = await Promise.all([
       axios.get(`${API_BASE_URL}/api/users`),
-      axios.get(`${API_BASE_URL}/api/machines`)
+      axios.get(`${API_BASE_URL}/api/machines/getallmachine`)
     ]);
     setUserList(usersRes.data);
     setMachineList(machinesRes.data);

@@ -179,7 +179,7 @@ const NavigationBar = ({ collapsed, toggleSidebar }) => {
         // const description = String(param.parameterDescription);
 
         return (
-          address.startsWith("K") &&
+          address.startsWith("k") &&
           ((ok === "0" && value === "1") || (ok === "1" && value === "0"))
         );
       });

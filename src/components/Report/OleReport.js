@@ -61,14 +61,14 @@ const fetchMonthlyData = async (machines = machine_ids) => {
     const response = await axios.get(`${API_BASE_URL}/api/oee-logs`);
     
     // ✅ Check if response data is valid
-    if (!response.data || !Array.isArray(response.data.oeeData)) {
-      console.error("❌ Invalid or missing OEE data in API response.");
-      return;
-    }
+   if (!response.data || !Array.isArray(response.data)) {
+  console.error("❌ Invalid or missing OEE data in API response.");
+  return;
+}
 
-    const oeeData = response.data.oeeData.filter((entry) =>
-      machines.includes(entry.machine_id)
-    );
+const oeeData = response.data.filter((entry) =>
+  machines.includes(entry.machine_id)
+);
 
     if (!oeeData.length) {
       console.warn("⚠️ No matching OEE data found for selected machines.");
@@ -123,7 +123,7 @@ const fetchMonthlyData = async (machines = machine_ids) => {
       const response = await axios.get(
         `${API_BASE_URL}/api/oee-logs`
       );
-      const oeeData = response.data.oeeData.filter((entry) =>
+      const oeeData = response.data.filter((entry) =>
         machine_ids.includes(entry.machine_id)
       );
 

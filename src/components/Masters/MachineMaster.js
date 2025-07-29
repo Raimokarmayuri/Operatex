@@ -104,12 +104,20 @@ const CncMachineForm = () => {
     }
   };
 
-  const handleEdit = (machine) => {
-    setFormData(machine);
-    setEditId(machine.machine_id);
-    setIsEditing(true);
-    setShowForm(true);
-  };
+ const handleEdit = (machine) => {
+  const {
+    created_at,
+    updated_at,
+    machine_id,
+    ...editableFields
+  } = machine;
+
+  setFormData(editableFields);
+  setEditId(machine_id); // store separately
+  setIsEditing(true);
+  setShowForm(true);
+};
+
 
   const resetForm = () => {
     setFormData({
@@ -170,7 +178,9 @@ const CncMachineForm = () => {
 
       {showForm && (
         <form onSubmit={handleSubmit} className="row ms-2">
-  {Object.entries(formData).map(([key, val]) => (
+ {Object.entries(formData)
+  .filter(([key]) => key !== "created_at" && key !== "updated_at")
+  .map(([key, val]) => (
     <div className="col-md-3 mb-3" key={key}>
       <label className="form-label">
         {key.replace(/_/g, " ").toUpperCase()}

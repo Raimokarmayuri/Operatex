@@ -291,11 +291,11 @@ const Sidebar = ({ collapsed, toggleSidebar, isOpen, isMobileView }) => {
           path: "/addmaintenance",
         },
        
-        {
-          icon: <FaTable size={18} className="text-danger" />,
-          text: "Diagnostic Threshold",
-          path: "/diagnostic",
-        },
+        // {
+        //   icon: <FaTable size={18} className="text-danger" />,
+        //   text: "Diagnostic Threshold",
+        //   path: "/diagnostic",
+        // },
       ],
     },
 

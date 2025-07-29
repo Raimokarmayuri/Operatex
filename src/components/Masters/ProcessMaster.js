@@ -147,7 +147,7 @@ export default function ProcessMasterForm() {
   });
 
   return (
-    <div className="container3 mb-4" style={{ marginTop: "50px" }}>
+    <div className="container3 mb-4 ms-3" style={{ marginTop: "50px" }}>
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2 p-2 border rounded bg-light">
         <div className="fs-4 fw-bold" style={{ color: "#034694" }}>
           Process Master
@@ -250,6 +250,7 @@ export default function ProcessMasterForm() {
                 <td>
                   <select
                     className="form-control"
+                     style={{ width: "150px" }}
                     value={row.machine_id}
                     onChange={(e) =>
                       handleRowChange(index, "machine_id", e.target.value)
@@ -275,6 +276,7 @@ export default function ProcessMasterForm() {
                   <input
                     type="number"
                     className="form-control"
+                     style={{ width: "80px" }}
                     value={row.sequence_no}
                     onChange={(e) =>
                       handleRowChange(index, "sequence_no", e.target.value)

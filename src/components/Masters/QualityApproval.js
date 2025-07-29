@@ -34,56 +34,59 @@ const SetupApprovalQualityView = () => {
     setPartList(res.data);
   };
 
-  const fetchSetupApprovalData = async (machineId, partId) => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/api/setup-approvals`);
-      const qualityMeta = await axios.get(
-        `${API_BASE_URL}/api/setups/parameters/${machineId}/${partId}`
-      );
+const fetchSetupApprovalData = async (machineId, partId) => {
+  try {
+    const res = await axios.get(`${API_BASE_URL}/api/setup-approvals`);
+    const qualityMeta = await axios.get(
+      `${API_BASE_URL}/api/setups/parameters/${machineId}/${partId}`
+    );
 
-      const qualityMap = {};
-      qualityMeta.data.forEach((q) => {
-        qualityMap[q.parameters] = q.quality_part_count || 0;
+    const qualityMap = {};
+    qualityMeta.data.forEach((q) => {
+      qualityMap[q.parameters] = q.quality_part_count || 0;
+    });
+
+    console.log("Setup Approvals Data:", res.data);
+    const filtered = res.data.find(
+      (sa) =>
+        parseInt(sa.machine_id) === parseInt(machineId) &&
+        parseInt(sa.part_id) === parseInt(partId)
+    );
+
+    if (filtered) {
+      setSetupApprovalId(filtered.setup_approval_id);
+      setRemarkByQuality(filtered.remark_by_quality || "");
+
+      const rows = filtered.parameters.map((param) => {
+        const count = qualityMap[param.parameter || param.name || ""] || 0;
+        const inputs = param.inputs || [];
+        const inputFields = Array.from(
+          { length: count },
+          (_, i) => inputs[5 + i] || ""
+        );
+
+        return {
+          parameter: param.parameter || param.name || "",
+          specification: param.specification || "",
+          inspection_method: param.inspection_method || "",
+          inputs: inputs.slice(0, 5) || ["", "", "", "", ""],
+          dynamic_inputs: inputFields,
+          quality_part_count: count,
+          remark_by_quality: param.remark_by_quality || "",
+          boolean_expected_value: param.boolean_expected_value || false,
+        };
       });
 
-      const filtered = res.data.find(
-        (sa) =>
-          sa.machine_id === parseInt(machineId) &&
-          sa.part_id === parseInt(partId)
-      );
-
-      if (filtered) {
-        setSetupApprovalId(filtered.setup_approval_id);
-        setRemarkByQuality(filtered.remark_by_quality || "");
-
-        const rows = filtered.parameters.map((param, idx) => {
-          const count = qualityMap[param.parameter || param.name || ""] || 0;
-          const inputFields = Array.from(
-            { length: count },
-            (_, i) => param.inputs?.[5 + i] || ""
-          );
-
-          return {
-            parameter: param.parameter || param.name || "",
-            specification: param.specification || "",
-            inspection_method: param.inspection_method || "",
-            inputs: param.inputs?.slice(0, 5) || ["", "", "", "", ""],
-            dynamic_inputs: inputFields,
-            quality_part_count: count,
-            remark_by_quality: param.remark_by_quality || "",
-            boolean_expected_value: param.boolean_expected_value || false,
-            inputs: param.inputs,
-          };
-        });
-
-        setParameterRows(rows);
-      } else {
-        setParameterRows([]);
-      }
-    } catch (err) {
-      console.error("Failed to fetch setup approvals", err);
+      setParameterRows(rows);
+    } else {
+      console.warn("No setup approval record found.");
+      setParameterRows([]);
     }
-  };
+  } catch (err) {
+    console.error("Failed to fetch setup approvals", err);
+  }
+};
+
 
   const handleDynamicInputChange = (rowIdx, inputIdx, value) => {
     const updatedRows = [...parameterRows];
@@ -242,7 +245,7 @@ const SetupApprovalQualityView = () => {
           </tbody>
         </Table>
 
-        <Button type="submit" disabled={!setupApprovalId}>
+        <Button type="submit" disabled={!setupApprovalId} onChange={handleSubmit}>
           Submit Remarks
         </Button>
       </Form>
