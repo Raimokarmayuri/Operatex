@@ -37,7 +37,7 @@ const MaintenanceScheduleForm = () => {
       setSchedules(sorted);
       setFilteredSchedules(sorted);
     } catch (error) {
-      setAlertMessage("Error fetching schedules");
+      setAlertMessage("No data forund");
       setAlertType("danger");
     }
   };

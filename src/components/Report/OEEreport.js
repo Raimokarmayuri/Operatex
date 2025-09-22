@@ -151,18 +151,18 @@ const OEEDataTable = () => {
 
     // Define header row with styles
     worksheet.columns = [
-      { header: "Machine ID", key: "machine_id", width: 15 },
+      { header: "Machine ID", key: "machine_name_type", width: 15 },
       { header: "Shift Number", key: "shift_no", width: 12 },
       { header: "Part Name", key: "part_name", width: 15 },
       { header: "OEE (%)", key: "OEE", width: 10 },
       { header: "Availability (%)", key: "availability", width: 15 },
       { header: "Quality (%)", key: "quality", width: 10 },
       { header: "Performance (%)", key: "performance", width: 15 },
-      { header: "Good Parts", key: "goodPart", width: 15 },
+      // { header: "Good Parts", key: "goodPart", width: 15 },
       { header: "Defective Parts", key: "defectiveParts", width: 15 },
       { header: "Total Parts", key: "TotalPartsProduced", width: 15 },
       { header: "Downtime (min)", key: "downtimeDuration", width: 15 },
-      { header: "Ideal Cycle Time", key: "idealCycleTime", width: 15 },
+      // { header: "Ideal Cycle Time", key: "idealCycleTime", width: 15 },
       { header: "Created At", key: "createdAt", width: 25 },
       { header: "Current Time", key: "currentTime", width: 25 },
     ];
@@ -181,7 +181,7 @@ const OEEDataTable = () => {
     // Add data rows with centered alignment
     oeeData.forEach((data) => {
       const row = worksheet.addRow({
-        machine_id: data.machine_id,
+        machine_name_type: data.machine_name_type,
         shift_no: data.shift_no,
         part_name: data.part_name,
         expectedPartCount: data.expectedPartCount,
@@ -242,7 +242,7 @@ const OEEDataTable = () => {
           <select
             className="form-select form-select-sm"
             name="machine_id"
-            value={filters.machine_id}
+            value={filters.machine_name_type}
             onChange={handleInputChange}
             title="Machine ID"
             style={{ width: "150px" }}
@@ -363,7 +363,7 @@ const OEEDataTable = () => {
                 Date
               </th>
               <th scope="col" style={{ color: "#034694" }}>
-                Machine ID
+                Machine 
               </th>
               <th scope="col" style={{ color: "#034694" }}>
                 Shift No.
@@ -399,7 +399,7 @@ const OEEDataTable = () => {
               oeeData.map((data) => (
                 <tr key={data._id}>
                   <td>{new Date(data.createdAt).toLocaleString()}</td>
-                  <td>{data.machine_id}</td>
+                  <td>{data.machine_name_type}</td>
                   <td>{data.shift_no}</td>
                   <td>{Number(data.OEE).toFixed(2)}</td>
                   <td>{Number(data.availability).toFixed(2)}</td>

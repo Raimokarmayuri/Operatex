@@ -7,7 +7,7 @@ import API_BASE_URL from "../config";
 const CncMachineform = () => {
   const [machines, setMachines] = useState([]);
   const [formData, setFormData] = useState({
-    machineId: '',
+    machine_id: '',
     organizationId: '',
     // assetId: '',
     machineName: '',
@@ -42,7 +42,7 @@ const CncMachineform = () => {
 
   const fetchMachines = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/machines/${orgid}`);
+      const response = await axios.get(`${API_BASE_URL}/api/machines/getallmachine`);
       // Filter only active machines
       const activeMachines = response.data.filter(machine => machine.status === 'INACTIVE');
       setMachines(activeMachines);
@@ -82,7 +82,7 @@ const CncMachineform = () => {
 
   const resetForm = () => {
     setFormData({
-      machineId: '',
+      machine_id: '',
       organizationId: '',
       // assetId: '',
       machineName: '',
@@ -107,7 +107,7 @@ const CncMachineform = () => {
 
   const handleEdit = (machine) => {
     setIsEditing(true);
-    setEditId(machine.machineId);
+    setEditId(machine.machine_id);
     setFormData(machine);
     setShowForm(true);
   };
@@ -184,7 +184,7 @@ const CncMachineform = () => {
         >
           <tr>
             <th style={{ color: "#034694" }}>Machine ID</th>
-            <th style={{ color: "#034694" }}>Organization ID</th>
+            <th style={{ color: "#034694" }}>Machine Name</th>
             <th style={{ color: "#034694" }}>Status</th>
             {/* <th>Machine Name</th> */}
             {/* <th>Actions</th> */}
@@ -192,9 +192,9 @@ const CncMachineform = () => {
         </thead>
         <tbody>
           {machines.map((machine) => (
-            <tr key={machine.machineId}>
-              <td>{machine.machineId}</td>
-              <td>{machine.organizationId}</td>
+            <tr key={machine.machine_id}>
+              <td>{machine.machine_id}</td>
+              <td>{machine.machine_name_type}</td>
               <td>{machine.status}</td>
             </tr>
           ))}

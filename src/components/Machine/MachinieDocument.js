@@ -204,8 +204,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import API_BASE_URL from "../config";
-import MaintenanceOverview from "./MaintenanceNavbar";
-import Files from "./Files";
 
 const DocumentForm = () => {
   const [formData, setFormData] = useState({
@@ -326,26 +324,12 @@ const DocumentForm = () => {
   };
 
   return (
-     <div className="bg-light"
-      // style={{ cursor: "pointer" ,fontFamily: "Montserrat, sans-serif",  backgroundColor: "#ffdac2" }}
-      style={{
-        // backgroundColor: "white",
-        maxWidth: "100%",
-        borderRadius: "8px",
-        padding: "0px",
-        boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
-        marginTop: "3.7rem",
-        height: "auto",
-        fontFamily: "Montserrat, sans-serif",
-      }}>
-    <Files />
-    <MaintenanceOverview />
-    <div className="container my-1 p-5">
-      {/* <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 p-2 border rounded bg-light">
+    <div className="container my-5">
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 p-2 border rounded bg-light">
         <div className="fs-4 fw-bold" style={{ color: "#034694" }}>
           Upload Document
         </div>
-      </div> */}
+      </div>
 
       {message && (
         <div className={`alert ${message.includes('successfully') ? 'alert-success' : 'alert-danger'}`}>
@@ -475,7 +459,6 @@ const DocumentForm = () => {
           </button>
         </div>
       </form>
-    </div>
     </div>
   );
 };

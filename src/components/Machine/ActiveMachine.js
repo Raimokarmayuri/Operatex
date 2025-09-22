@@ -7,7 +7,7 @@ import API_BASE_URL from "../config";
 const CncMachineform = () => {
   const [machines, setMachines] = useState([]);
   const [formData, setFormData] = useState({
-    machineId: "",
+    machine_id: "",
     organizationId: "",
     MachinePosition: "",
     machineName: "",
@@ -86,7 +86,7 @@ const CncMachineform = () => {
 
   const resetForm = () => {
     setFormData({
-      machineId: "",
+      machine_id: "",
       organizationId: "",
       MachinePosition: "",
       machineName: "",
@@ -111,7 +111,7 @@ const CncMachineform = () => {
 
   const handleEdit = (machine) => {
     setIsEditing(true);
-    setEditId(machine.machineId);
+    setEditId(machine.machine_id);
     setFormData(machine);
     setShowForm(true);
   };
@@ -180,23 +180,23 @@ const CncMachineform = () => {
           }}
         >
           <tr>
-            <th style={{ color: "#034694" }}>MachineID</th>
-            <th style={{ color: "#034694" }}>OrganizationID</th>
+            <th style={{ color: "#034694" }}>machine_id</th>
+            <th style={{ color: "#034694" }}>Machine Name</th>
             <th style={{ color: "#034694" }}>Status</th>
           </tr>
         </thead>
         <tbody>
           {machines.map((machine) => (
-            <tr key={machine.machineId}>
-              <td>{machine.machineId}</td>
-              <td>{machine.organizationId}</td>
+            <tr key={machine.machine_id}>
+              <td>{machine.machine_id}</td>
+              <td>{machine.machine_name_type}</td>
               <td>{machine.status}</td>
               {/* <td>{machine.machineName}</td> */}
               {/* <td>
                 <button className="btn btn-info btn-sm me-2" onClick={() => handleEdit(machine)}>
                   Edit
                 </button>
-                <button className="btn btn-danger btn-sm ml-2 me-2" onClick={() => handleDelete(machine.machineId)}>
+                <button className="btn btn-danger btn-sm ml-2 me-2" onClick={() => handleDelete(machine.machine_id)}>
                   Delete
                 </button>
               </td> */}

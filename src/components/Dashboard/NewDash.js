@@ -185,7 +185,7 @@ const filteredMachines = machines.filter((machine) => {
       label: "Breakdowns",
       count: breakdownCount,
       icon: <FaTools style={{ width: 25, height: 25, fill: "#9b59b6" }} />,
-      onClick: () => handleCardClick("/breakdowntable"),
+      onClick: () => handleCardClick("/breakdownraise"),
     },
   ];
 

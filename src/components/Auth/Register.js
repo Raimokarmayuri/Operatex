@@ -108,7 +108,7 @@ const RegisterPage = () => {
   return (
     <div className="container py-4 mt-5">
       {/* Header + Toggle */}
-      <div className="d-flex align-items-center justify-content-between mb-3">
+      {/* <div className="d-flex align-items-center justify-content-between mb-3">
         <h3 className="mb-0">{showForm ? "Register User" : "Registered Users"}</h3>
         <div className="btn-group">
           <button
@@ -126,7 +126,7 @@ const RegisterPage = () => {
             View Users
           </button>
         </div>
-      </div>
+      </div> */}
 
       {/* ---------------- FORM ---------------- */}
       {showForm && (
@@ -224,7 +224,7 @@ const RegisterPage = () => {
       )}
 
       {/* ---------------- TABLE ---------------- */}
-      {!showForm && (
+      {/* {!showForm && (
   <div className="card shadow-sm">
     <div className="d-flex justify-content-between align-items-center p-3">
       <div className="d-flex align-items-center gap-3">
@@ -268,7 +268,7 @@ const RegisterPage = () => {
               <th>Email</th>
               <th>Role</th>
               <th style={{ whiteSpace: "nowrap" }}>Machine</th>
-              {/* <th style={{ whiteSpace: "nowrap" }}>Mobile No</th> */}
+             
               <th style={{ whiteSpace: "nowrap" }}>Created</th>
             </tr>
           </thead>
@@ -291,7 +291,7 @@ const RegisterPage = () => {
                   <td>{u.email}</td>
                   <td>{u.role}</td>
                   <td>{machineName}</td>
-                  {/* <td>{u.mobile_no ?? "-"}</td> */}
+                 
                   <td>{u.created_at ? new Date(u.created_at).toLocaleString() : "-"}</td>
                 </tr>
               );
@@ -301,7 +301,7 @@ const RegisterPage = () => {
       </div>
     )}
   </div>
-)}
+)} */}
     </div>
   );
 };

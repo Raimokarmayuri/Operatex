@@ -13,7 +13,7 @@ const OperatorScreen = () => {
       {/* Header Section */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h5 className="text-muted">Operator Name : {user.name}</h5>
-        <h5 className="text-end flex-grow-1">MachineID : {user.machineId}</h5>
+        <h5 className="text-end flex-grow-1">MachineID : {user.machine_id}</h5>
       </div>
 
       {/* Cards Section */}

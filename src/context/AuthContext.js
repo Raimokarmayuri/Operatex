@@ -1,3 +1,5 @@
+
+
 // import React, { createContext, useState, useEffect, useContext } from "react";
 
 // const AuthContext = createContext();
@@ -11,43 +13,47 @@
 //   const [loading, setLoading] = useState(true);
 
 //   useEffect(() => {
-//     // On component mount, check if a token exists in localStorage
 //     const token = localStorage.getItem("token");
 //     const userData = localStorage.getItem("userData");
 
 //     if (token && userData) {
-//       // Parse the userData string and set it in state
-//       setUser(JSON.parse(userData));
+//       const parsedUser = JSON.parse(userData);
+//       setUser({
+//         token,
+//         name: parsedUser.name,
+//         role: parsedUser.role,
+//         machineId: parsedUser.machineId,
+//       });
 //     }
 
-//     // Mark the loading as complete once the state is updated
 //     setLoading(false);
 //   }, []);
 
 //   const login = (userData) => {
-//     // Save token and user details to localStorage
+//     // Save token and full user data including machineId
 //     localStorage.setItem("token", userData.token);
-//     localStorage.setItem("userData", JSON.stringify({
-//       name: userData.name,
-//       role: userData.role,
-//     }));
+//     localStorage.setItem(
+//       "userData",
+//       JSON.stringify({
+//         name: userData.name,
+//         role: userData.role,
+//         machineId: userData.machineId, // Save machineId
+//       })
+//     );
 
-//     // Set user state with all data
 //     setUser({
 //       token: userData.token,
 //       name: userData.name,
 //       role: userData.role,
+//       machineId: userData.machineId,
 //     });
 //   };
 
 //   const logout = () => {
-//     // Clear local storage
-//     localStorage.removeItem("token");
-//     localStorage.removeItem("userData");
-
-//     // Clear user state
-//     setUser(null);
-//   };
+//   setUser(null);
+//   localStorage.removeItem("user"); // if you persist user
+//   localStorage.removeItem("token");
+// };
 
 //   return (
 //     <AuthContext.Provider value={{ user, loading, login, logout }}>
@@ -56,65 +62,81 @@
 //   );
 // };
 
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, { createContext, useState, useEffect, useContext, useMemo } from "react";
 
-const AuthContext = createContext();
+const STORAGE_TOKEN = "token";
+const STORAGE_USER = "userData";
 
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+const AuthContext = createContext(null);
+
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Load from storage on first mount
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userData = localStorage.getItem("userData");
-
-    if (token && userData) {
-      const parsedUser = JSON.parse(userData);
-      setUser({
-        token,
-        name: parsedUser.name,
-        role: parsedUser.role,
-        machineId: parsedUser.machineId,
-      });
+    try {
+      const token = localStorage.getItem(STORAGE_TOKEN);
+      const raw = localStorage.getItem(STORAGE_USER);
+      if (token && raw) {
+        const parsed = JSON.parse(raw);
+        setUser({
+          token,
+          name: parsed.name ?? "",
+          role: parsed.role ?? "",
+          machineId: parsed.machineId ?? parsed.machine_id ?? null,
+        });
+      }
+    } catch {
+      // corrupted storage; clear it
+      localStorage.removeItem(STORAGE_TOKEN);
+      localStorage.removeItem(STORAGE_USER);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }, []);
 
-  const login = (userData) => {
-    // Save token and full user data including machineId
-    localStorage.setItem("token", userData.token);
+  // Normalize backend payload and persist
+  const login = (u) => {
+    // Accept either machineId or machine_id from backend
+    const normalized = {
+      token: u.token,
+      name: u.name,
+      role: u.role,
+      machineId: u.machineId ?? u.machine_id ?? null,
+    };
+
+    localStorage.setItem(STORAGE_TOKEN, normalized.token);
     localStorage.setItem(
-      "userData",
+      STORAGE_USER,
       JSON.stringify({
-        name: userData.name,
-        role: userData.role,
-        machineId: userData.machineId, // Save machineId
+        name: normalized.name,
+        role: normalized.role,
+        machineId: normalized.machineId,
       })
     );
 
-    setUser({
-      token: userData.token,
-      name: userData.name,
-      role: userData.role,
-      machineId: userData.machineId,
-    });
+    setUser(normalized);
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userData");
     setUser(null);
+    localStorage.removeItem(STORAGE_TOKEN);
+    localStorage.removeItem(STORAGE_USER); // <-- was "user" before; fixed
   };
 
+  const isAdmin = user?.role?.toLowerCase?.() === "admin";
+
+  const value = useMemo(
+    () => ({ user, loading, login, logout, isAdmin }),
+    [user, loading]
+  );
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
-

@@ -33,6 +33,11 @@ const GaugeMeter = ({ label, value }) => (
   </div>
 );
 
+const safeValue = (val) => {
+  if (val == null || isNaN(val)) return 0;
+  return val < 0 ? 0 : val;
+};
+
 const MachineOEEGauge = () => {
   // Bottleneck machine IDs
   const { data: bottleneckIds, error: bottleneckError } = useSWR(
@@ -61,7 +66,6 @@ const MachineOEEGauge = () => {
     return <div>Loading...</div>;
   }
 
-  // Compute today's OEE for bottleneck machines
   const todayString = new Date().toISOString().split("T")[0];
   const todayData = {};
 
@@ -102,43 +106,44 @@ const MachineOEEGauge = () => {
   const fallbackOee = avgOeeData?.machineData?.averageMetrics;
 
   return (
-    <div className="container mt-1">
+    <div className="container mt-4">
       <div className="row d-flex justify-content-center">
         <GaugeMeter
           label="A"
-          value={
+          value={safeValue(
             todayOee
               ? parseFloat(todayOee.availability)
               : parseFloat(fallbackOee?.availability || 0)
-          }
+          )}
         />
         <GaugeMeter
           label="Q"
-          value={
+          value={safeValue(
             todayOee
               ? parseFloat(todayOee.quality)
               : parseFloat(fallbackOee?.quality || 0)
-          }
+          )}
         />
         <GaugeMeter
           label="P"
-          value={
+          value={safeValue(
             todayOee
               ? parseFloat(todayOee.performance)
               : parseFloat(fallbackOee?.performance || 0)
-          }
+          )}
         />
         <GaugeMeter
           label="OLE"
-          value={
+          value={safeValue(
             todayOee
               ? parseFloat(todayOee.OEE)
               : parseFloat(fallbackOee?.OEE || 0)
-          }
+          )}
         />
       </div>
     </div>
   );
 };
+
 
 export default MachineOEEGauge;

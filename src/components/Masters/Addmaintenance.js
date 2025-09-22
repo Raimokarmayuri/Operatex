@@ -35,6 +35,7 @@ const MaintenanceScheduleForm = () => {
     pm_schedule_date: getTodayDate(),
     next_schedule_date: "",
   });
+  const [selectedFilterMachineId, setSelectedFilterMachineId] = useState("");
 
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -358,6 +359,12 @@ const MaintenanceScheduleForm = () => {
     setFormData({ ...formData, status: e.target.value });
   };
 
+  const getMachineNameById = (id) => {
+  const machine = machineIds.find((m) => String(m.value) === String(id));
+  return machine ? machine.label : id; // fallback to ID if name not found
+};
+
+
   return (
     <div className="ms-3" style={{ marginTop: "3rem" }}>
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2 mb-2 p-2 border rounded bg-light">
@@ -365,14 +372,45 @@ const MaintenanceScheduleForm = () => {
         <div className="fs-4 fw-bold" style={{ color: "#034694" }}>
           Maintenance Schedule
         </div>
+       
+
         {!showForm && (
+          <>
+           <Select
+          className="ms-2"
+          placeholder="Filter by Machine"
+          isClearable
+          options={machineIds}
+          value={
+            machineIds.find((m) => m.value === selectedFilterMachineId) || null
+          }
+          onChange={(selected) => {
+            const machineId = selected ? selected.value : "";
+            setSelectedFilterMachineId(machineId);
+
+            if (!machineId) {
+              setFilteredSchedules(schedules); // Show all
+            } else {
+              const filtered = schedules.filter(
+                (s) => String(s.machine_id) === String(machineId)
+              );
+              setFilteredSchedules(filtered);
+            }
+
+            setActiveFilter(""); // Clear type filter when machine is selected
+          }}
+          styles={{
+            container: (base) => ({ ...base, minWidth: "220px" }),
+          }}
+        />
+
           <div className="d-flex flex-wrap align-items-center justify-content-end gap-2">
             <button
               className="btn btn-primary me-3 "
               title="Add Schedule Data"
               onClick={handleAddClick}
             >
-              <i className="fas fa-file-medical"></i>
+              <i className="fas fa-file-medical"> +</i>
             </button>
             <div className="d-flex flex-wrap">
               {["JH", "PM", "CBM", "TBM"].map((type) => (
@@ -401,12 +439,14 @@ const MaintenanceScheduleForm = () => {
                 onClick={() => {
                   setFilteredSchedules(schedules);
                   setActiveFilter("");
+                  setSelectedFilterMachineId(""); // reset filter dropdown
                 }}
               >
                 Reset
               </button>
             </div>
           </div>
+          </>
         )}
       </div>
       {/* Alert Messages */}
@@ -429,11 +469,11 @@ const MaintenanceScheduleForm = () => {
         <form onSubmit={handleSubmit} className="m-3 mt-3 ">
           <div className="row">
             <div className="col-md-4 mb-3">
-              <label className="form-label">Machine ID</label>
+              <label className="form-label">Machine </label>
               <Select
                 required
                 options={machineIds}
-                value={machineIds.find((m) => m.value === formData.machine_id)}
+                value={machineIds.find((m) => m.value === formData.machine_name_type)}
                 onChange={(option) =>
                   setFormData({ ...formData, machine_id: option.value })
                 }
@@ -636,7 +676,7 @@ const MaintenanceScheduleForm = () => {
             <thead
               className="table-light"
               style={{
-                position: "sticky",
+                // position: "sticky",
                 top: 1,
                 zIndex: 1020,
               }}
@@ -644,7 +684,7 @@ const MaintenanceScheduleForm = () => {
               <tr style={{ lineHeight: "1.5rem" }}>
                 {" "}
                 {/* Reduce row height */}
-                <th style={{ padding: "8px", color: "#034694" }}>MachineID</th>
+                <th style={{ padding: "8px", color: "#034694" }}>Machine</th>
                 <th style={{ padding: "8px", color: "#034694" }}>
                   Maintenance Name
                 </th>
@@ -665,7 +705,8 @@ const MaintenanceScheduleForm = () => {
                 <tr key={schedule.id} style={{ lineHeight: "1.2rem" }}>
                   {" "}
                   {/* Reduce row height */}
-                  <td style={{ padding: "8px" }}>{schedule.machine_id}</td>
+                  <td style={{ padding: "8px" }}>{getMachineNameById(schedule.machine_id)}</td>
+
                   <td style={{ padding: "8px" }}>
                     {schedule.maintenance_name}
                   </td>

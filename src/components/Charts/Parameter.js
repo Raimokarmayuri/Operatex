@@ -4,21 +4,29 @@ import { Row, Col } from "react-bootstrap";
 import "./Parameter2.css";
 import API_BASE_URL from "../config";
 
-const PmcParameters = ({ machineId }) => {
+const PmcParameters = () => {
+  const machine_id = localStorage.getItem("selectedmachine_id");
+  const machine_name_type = localStorage.getItem("selectedMachineName");
+
   const [parameters, setParameters] = useState([]);
   const [alertMachines, setAlertMachines] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch PMC parameters for a specific machine
-  const fetchParametersForMachine = async (machineId) => {
+  const fetchParametersForMachine = async (machine_id) => {
     setLoading(true);
     setError(null);
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/api/pmc-parameters/machine/${machineId}`
+        `${API_BASE_URL}/api/pmc-parameters/${machine_id}`
       );
-      const data = response.data;
+
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data
+        ? [response.data]
+        : [];
+
       setParameters(data);
       setLoading(false);
 
@@ -33,23 +41,27 @@ const PmcParameters = ({ machineId }) => {
         }
       });
 
-      if (hasAlert && !alertMachines.includes(machineId)) {
-        setAlertMachines((prev) => [...prev, machineId]);
+      if (hasAlert && !alertMachines.includes(machine_id)) {
+        setAlertMachines((prev) => [...prev, machine_id]);
       }
     } catch (err) {
+      console.error("Fetch error:", err);
       setError("No data found");
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchParametersForMachine(machineId);
-    const interval = setInterval(() => {
-      fetchParametersForMachine(machineId);
-    }, 5000);
+    if (machine_id) {
+      fetchParametersForMachine(machine_id);
 
-    return () => clearInterval(interval);
-  }, [machineId]);
+      const interval = setInterval(() => {
+        fetchParametersForMachine(machine_id);
+      }, 50000);
+
+      return () => clearInterval(interval);
+    }
+  }, [machine_id]);
 
   const renderStatus = (expected, actual) => {
     if ((expected === "0" && actual === "1") || (expected === "1" && actual === "0")) {
@@ -63,7 +75,10 @@ const PmcParameters = ({ machineId }) => {
     <div className="container">
       <Row className="justify-content-center mb-4">
         <Col className="text-center">
-          <h1>PMC Parameters</h1>
+          {/* <h1>PMC Parameters</h1> */}
+          {/* <h5 style={{ color: "#034694" }}>
+            Machine: <strong>{machine_name_type || "Unknown"}</strong>
+          </h5> */}
         </Col>
       </Row>
 
@@ -89,7 +104,7 @@ const PmcParameters = ({ machineId }) => {
               const isAlert = status === "NOT OK";
 
               return (
-                <div className="col-md-3 mb-3" key={param.id}>
+                <div className="col-md-3 mb-3" key={param.pmc_parameter_id || param.id}>
                   <div
                     className={`card ${
                       isAlert ? "border-danger" : "border-success"
@@ -97,7 +112,7 @@ const PmcParameters = ({ machineId }) => {
                   >
                     <div className="card-body">
                       <h5 className="card-title text-center">
-                        {param.parameter_description}
+                        {param.parameter_name}
                       </h5>
                       <h2
                         className="card-text text-center fw-bold"

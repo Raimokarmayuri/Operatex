@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Button, Form } from 'react-bootstrap';
-import { BsPencil, BsTrash } from 'react-icons/bs';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { Button, Form } from "react-bootstrap";
+import { BsPencil, BsTrash } from "react-icons/bs";
 import API_BASE_URL from "../config";
 
 export default function LineMasterForm() {
@@ -9,19 +9,19 @@ export default function LineMasterForm() {
   const [show, setShow] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
-    line_name: '',
-    plant_shop_id: '',
-    line_type: '',
-    process_type: '',
+    line_name: "",
+    plant_shop_id: "",
+    line_type: "",
+    process_type: "",
     target_oee_output: null,
-    layout_upload: '',
-    status: '',
-    remarks: ''
+    layout_upload: "",
+    status: "",
+    remarks: "",
   });
   const [file, setFile] = useState(null);
   const [editingId, setEditingId] = useState(null);
-  const [alertMessage, setAlertMessage] = useState('');
-  const [alertType, setAlertType] = useState('');
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertType, setAlertType] = useState("");
 
   const apiUrl = `${API_BASE_URL}/api/lines`;
 
@@ -50,18 +50,18 @@ export default function LineMasterForm() {
       form.append(key, formData[key]);
     }
     if (file) {
-      form.append('layout_upload', file);
+      form.append("layout_upload", file);
     }
 
     try {
       if (editMode) {
         await axios.put(`${apiUrl}/${editingId}`, form, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+          headers: { "Content-Type": "multipart/form-data" },
         });
         setAlertMessage("Line updated successfully!");
       } else {
         await axios.post(apiUrl, form, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+          headers: { "Content-Type": "multipart/form-data" },
         });
         setAlertMessage("Line added successfully!");
       }
@@ -70,9 +70,11 @@ export default function LineMasterForm() {
       resetForm();
       setShow(false);
     } catch (err) {
-      console.error('Submit failed:', err.response?.data || err.message);
-      setAlertMessage('Error submitting form: ' + (err.response?.data?.error || err.message));
-      setAlertType('danger');
+      console.error("Submit failed:", err.response?.data || err.message);
+      setAlertMessage(
+        "Error submitting form: " + (err.response?.data?.error || err.message)
+      );
+      setAlertType("danger");
     }
   };
 
@@ -84,7 +86,7 @@ export default function LineMasterForm() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this line?')) {
+    if (window.confirm("Are you sure you want to delete this line?")) {
       await axios.delete(`${apiUrl}/${id}`);
       fetchLines();
     }
@@ -92,14 +94,14 @@ export default function LineMasterForm() {
 
   const resetForm = () => {
     setFormData({
-      line_name: '',
-      plant_shop_id: '',
-      line_type: '',
-      process_type: '',
-      target_oee_output: null,
-      layout_upload: '',
-      status: '',
-      remarks: ''
+      line_name: "",
+      plant_shop_id: "",
+      line_type: "",
+      process_type: "",
+      target_oee_output: "",
+      layout_upload: "",
+      status: "",
+      remarks: "",
     });
     setFile(null);
     setEditMode(false);
@@ -124,7 +126,10 @@ export default function LineMasterForm() {
       </div>
 
       {alertMessage && (
-        <div className={`alert alert-${alertType} alert-dismissible fade show`} role="alert">
+        <div
+          className={`alert alert-${alertType} alert-dismissible fade show`}
+          role="alert"
+        >
           {alertMessage}
           <button
             type="button"
@@ -138,21 +143,24 @@ export default function LineMasterForm() {
 
       {show && (
         <form onSubmit={handleSubmit} className="row ms-2">
-          {Object.entries(formData).map(([key, val]) => (
-            key !== 'layout_upload' && (
-              <div className="col-md-3 mb-3" key={key}>
-                <label className="form-label">{key.replace(/_/g, ' ').toUpperCase()}</label>
-                <input
-                  type={key === "target_oee_output" ? "number" : "text"}
-                  name={key}
-                  className="form-control"
-                  value={val || ''}
-                  onChange={handleChange}
-                  required={key !== "remarks"}
-                />
-              </div>
-            )
-          ))}
+          {Object.entries(formData).map(
+            ([key, val]) =>
+              key !== "layout_upload" && (
+                <div className="col-md-3 mb-3" key={key}>
+                  <label className="form-label">
+                    {key.replace(/_/g, " ").toUpperCase()}
+                  </label>
+                  <input
+                    type={key === "target_oee_output" ? "number" : "text"}
+                    name={key}
+                    className="form-control"
+                    value={val || ""}
+                    onChange={handleChange}
+                    required={key !== "remarks"}
+                  />
+                </div>
+              )
+          )}
 
           <div className="col-md-3 mb-3">
             <label className="form-label">LAYOUT UPLOAD</label>
@@ -169,7 +177,14 @@ export default function LineMasterForm() {
             <button type="submit" className="btn btn-primary me-2">
               {editMode ? "Update Line" : "Save Line"}
             </button>
-            <button type="button" className="btn btn-secondary" onClick={() => setShow(false)}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                resetForm(); // <— clear edit mode + fields
+                setShow(false); // <— hide form
+              }}
+            >
               Cancel
             </button>
           </div>
@@ -177,9 +192,18 @@ export default function LineMasterForm() {
       )}
 
       {!show && (
-        <div className="table-responsive" style={{ maxHeight: "600px", overflowY: "auto" }}>
-          <table className="table table-bordered table-hover mt-4" style={{ fontSize: "0.9rem", lineHeight: "1.2" }}>
-            <thead className="table-light" style={{ position: "sticky", top: 1, zIndex: 1020 }}>
+        <div
+          className="table-responsive"
+          style={{ maxHeight: "600px", overflowY: "auto" }}
+        >
+          <table
+            className="table table-bordered table-hover mt-4"
+            style={{ fontSize: "0.9rem", lineHeight: "1.2" }}
+          >
+            <thead
+              className="table-light"
+              style={{ position: "sticky", top: 1, zIndex: 1020 }}
+            >
               <tr>
                 <th style={{ color: "#034694" }}>Line ID</th>
                 <th style={{ color: "#034694" }}>Line Name</th>
@@ -208,7 +232,10 @@ export default function LineMasterForm() {
                     >
                       <BsPencil className="me-1" style={{ color: "black" }} />
                     </button>
-                    <button className="btn btn-sm" onClick={() => handleDelete(line.line_id)}>
+                    <button
+                      className="btn btn-sm"
+                      onClick={() => handleDelete(line.line_id)}
+                    >
                       <BsTrash style={{ color: "red" }} />
                     </button>
                   </td>

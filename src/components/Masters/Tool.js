@@ -219,25 +219,33 @@ const ToolMasterForm = () => {
   };
 
   return (
-    <div className="container3 mt-5">
-      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2 p-2 border rounded bg-light">
-        <div className="fs-4 fw-bold" style={{ color: "#034694" }}>
-          Tool Master
-        </div>
-        {!showForm && (
-          <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-            + Add Tool
-          </button>
-        )}
-      </div>
-      
-      <div className="mb-3 ms-3">
-        <input
-          placeholder="Search by tool name or number"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        />
-      </div>
+    <div className="container3 mt-5 ms-3">
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 p-2 border rounded bg-light">
+  <div className="fs-4 fw-bold" style={{ color: "#034694" }}>
+    Tool Master
+  </div>
+
+  <div className="d-flex align-items-center gap-2">
+    <input
+      className="form-control"
+      style={{ width: "250px", height: "32px", fontSize: "0.85rem" }}
+      placeholder="Search by tool name or number"
+      value={filter}
+      onChange={(e) => setFilter(e.target.value)}
+    />
+    {!showForm && (
+      <button
+        className="btn btn-primary"
+        style={{ height: "32px", fontSize: "0.85rem" }}
+        onClick={() => setShowForm(true)}
+      >
+        + Add Tool
+      </button>
+    )}
+  </div>
+</div>
+
+
       
       {showForm && (
         <Form onSubmit={handleSubmit} className="mb-4">
@@ -252,27 +260,27 @@ const ToolMasterForm = () => {
                       {percentageFields.includes(key) && ' (%)'}
                     </Form.Label>
                     {key === "part_id" ? (
-                      <Form.Select name={key} value={value} onChange={handleInputChange}>
+                      <Form.Select required name={key} value={value} onChange={handleInputChange}>
                         <option value="">Select Part</option>
                         {partList.map(part => (
                           <option key={part.part_id} value={part.part_id}>{part.part_name}</option>
                         ))}
                       </Form.Select>
                     ) : key === "machine_id" ? (
-                      <Form.Select name={key} value={value} onChange={handleInputChange}>
+                      <Form.Select required name={key} value={value} onChange={handleInputChange}>
                         <option value="">Select Machine</option>
                         {machineList.map(machine => (
                           <option key={machine.machine_id} value={machine.machine_id}>{machine.machine_name_type}</option>
                         ))}
                       </Form.Select>
                     ) : key === "status" ? (
-                      <Form.Select name={key} value={value} onChange={handleInputChange}>
+                      <Form.Select required name={key} value={value} onChange={handleInputChange}>
                         <option value="Active">Active</option>
                         <option value="Inactive">Inactive</option>
                         <option value="Maintenance">Maintenance</option>
                       </Form.Select>
                     ) : key === "tool_type" ? (
-                      <Form.Select name={key} value={value} onChange={handleInputChange}>
+                      <Form.Select required name={key} value={value} onChange={handleInputChange}>
                         <option value="">Select Tool Type</option>
                         <option value="Cutting">Cutting</option>
                         <option value="Drilling">Drilling</option>
@@ -283,6 +291,7 @@ const ToolMasterForm = () => {
                       </Form.Select>
                     ) : typeof value === 'boolean' ? (
                       <Form.Check 
+                      required
                         type="checkbox" 
                         name={key} 
                         label="Yes" 
@@ -291,6 +300,7 @@ const ToolMasterForm = () => {
                       />
                     ) : (
                       <Form.Control
+                      required
                         type={getInputType(key)}
                         name={key}
                         value={value}
@@ -312,22 +322,25 @@ const ToolMasterForm = () => {
       {!showForm && (
         <Table bordered hover responsive>
           <thead className="table-light">
-            <tr>
-              <th style={{ color: "#034694" }}>Tool Name</th>
-              <th style={{ color: "#034694" }}>Tool Number</th>
-              <th style={{ color: "#034694" }}>Machine ID</th>
-              <th style={{ color: "#034694" }}>Part</th>
-              <th style={{ color: "#034694" }}>Life Limit</th>
-              <th style={{ color: "#034694" }}>Status</th>
-              <th style={{ color: "#034694" }}>Actions</th>
+  <tr>
+    <th style={{ color: "#034694" }}>SR No.</th>
+    <th style={{ color: "#034694" }}>Tool Name</th>
+    <th style={{ color: "#034694" }}>Tool Number</th>
+    <th style={{ color: "#034694" }}>Machine ID</th>
+    <th style={{ color: "#034694" }}>Part</th>
+    <th style={{ color: "#034694" }}>Life Limit</th>
+    <th style={{ color: "#034694" }}>Status</th>
+    <th style={{ color: "#034694" }}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filteredTools.length > 0 ? filteredTools.map((tool) => (
+            {filteredTools.length > 0 ? filteredTools.map((tool, index) => (
               <tr key={tool.id}>
+                <td>{index+1}</td>
                 <td>{tool.tool_name}</td>
                 <td>{tool.tool_number}</td>
-                <td>{tool.machine_id}</td>
+                <td>{machineList.find(m => m.machine_id === tool.machine_id)?.machine_name_type || tool.machine_id}</td>
+
                 <td>{tool.part_id}</td>
                 <td>{tool.tool_life_limit}</td>
                 <td>{tool.status}</td>

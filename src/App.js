@@ -14,6 +14,8 @@ import Sidebar from "./components/MainComponent/Sidebar";
 import Navbar from "./components/MainComponent/Navbar";
 import Footer from "./components/MainComponent/Footer";
 import LoginPage from "./components/Auth/LoginPage";
+import Register from "./components/Auth/Register";
+
 import RegisterPage from "./components/Auth/RegisterPage";
 import Dashboard from "./components/Dashboard/Dashboard";
 import "./App.css";
@@ -156,7 +158,7 @@ const App = () => {
       {!user ? (
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/registerpage" element={<Register />} />
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       ) : (
@@ -253,6 +255,18 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
+
+
+                <Route
+                  path="/register"
+                  element={
+                    <ProtectedRoute roles={["admin", "production", "operator"]}>
+                      <RegisterPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+
                 <Route
                   path="/downtime"
                   element={

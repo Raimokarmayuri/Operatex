@@ -323,6 +323,7 @@ const handleEdit = (id) => {
                   <td>
                     <input
                       type="number"
+                      min={0}
                       style={{ width: "150px" }}
                       className="form-control"
                       value={row.step_no}
@@ -416,6 +417,7 @@ const handleEdit = (id) => {
                       <td>
                         <input
                           type="number"
+                           min={0}
                           style={{ width: "150px" }}
                           className="form-control"
                           value={row.spec_target_value}
@@ -431,6 +433,7 @@ const handleEdit = (id) => {
                       <td>
                         <input
                           type="number"
+                           min={0}
                           style={{ width: "150px" }}
                           className="form-control"
                           value={row.spec_min_tolerance}
@@ -446,6 +449,7 @@ const handleEdit = (id) => {
                       <td>
                         <input
                           type="number"
+                           min={0}
                           style={{ width: "150px" }}
                           className="form-control"
                           value={row.spec_max_tolerance}
@@ -510,6 +514,7 @@ const handleEdit = (id) => {
                   <td>
                     <input
                       type="number"
+                       min={0}
                       style={{ width: "150px" }}
                       className="form-control"
                       value={row.production_part_count}
@@ -525,6 +530,7 @@ const handleEdit = (id) => {
                   <td>
                     <input
                       type="number"
+                       min={0}
                       style={{ width: "150px" }}
                       className="form-control"
                       value={row.quality_part_count}

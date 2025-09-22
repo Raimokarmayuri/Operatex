@@ -52,8 +52,8 @@ const machine_name_type = localStorage.getItem("selectedMachineName");
         }
 
         // Group by date
-        const date = item.pm_schedule_date
-          ? new Date(item.pm_schedule_date).toLocaleDateString()
+        const date = item.next_schedule_date
+          ? new Date(item.next_schedule_date).toLocaleDateString()
           : "Unknown";
 
         if (!groupedByDate[date]) {
@@ -95,7 +95,14 @@ const machine_name_type = localStorage.getItem("selectedMachineName");
       legend: { display: false },
     },
   };
-
+ const handleBarClick = (event, elements, sourceChartData) => {
+  if (elements.length > 0 && sourceChartData) {
+    const index = elements[0].index;
+    const selectedDate = sourceChartData.labels[index];
+    const formattedDate = encodeURIComponent(selectedDate);
+    navigate(`/machine/${machine_id}/maintenance/schedule?date=${formattedDate}`);
+  }
+};
   const renderDoughnutCards = () => {
     return Object.entries(statusCounts).map(([type, counts], index) => {
       const data = {
@@ -107,6 +114,9 @@ const machine_name_type = localStorage.getItem("selectedMachineName");
           },
         ],
       };
+
+     
+
 
       return (
         <Col key={index} md={3} xs={12} className="d-flex">
@@ -173,11 +183,12 @@ const machine_name_type = localStorage.getItem("selectedMachineName");
                 <h5 className="fw-bold text-center mb-4" style={{ color: "#034694" }}>
                   Maintenance Schedules by Date
                 </h5>
-                <div style={{ height: "400px" }}>
+                <div style={{ height: "600px" }}>
                   {chartData ? (
                     <Bar
                       data={chartData}
                       options={{
+                        onClick: (event, elements) => handleBarClick(event, elements, chartData),
                         responsive: true,
                         plugins: {
                           legend: {

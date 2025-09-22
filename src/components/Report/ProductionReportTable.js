@@ -12,6 +12,8 @@ import {
 } from 'react-bootstrap';
 import { FaCaretDown } from 'react-icons/fa';
 import API_BASE_URL from "../config";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 const API_URL = `${API_BASE_URL}/api/oee-logs/forProductionchart`;
 
@@ -75,6 +77,32 @@ if (endDate)
     setShiftNo('');
   };
 
+  const exportToExcel = () => {
+  const worksheetData = filtered.map((row, i) => ({
+    "Sr No": i + 1,
+    "Created At": dayjs(row.createdAt).format("DD/MM/YYYY"),
+    "Shift No": row.shift_no,
+    "Machine Name": row.machine_name_type,
+    "Target Qty": row.expectedPartCount,
+    "Actual Qty": row.TotalPartsProduced,
+    "Defect Qty": row.defectiveParts,
+    "DownTime": row.downtimeDuration,
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  });
+
+  const data = new Blob([excelBuffer], { type: "application/octet-stream" });
+  saveAs(data, `Production_Report_${dayjs().format("YYYY-MM-DD")}.xlsx`);
+};
+
+
   return (
     <Container fluid>
       <Row className="justify-content-end align-items-end mb-3">
@@ -128,7 +156,8 @@ if (endDate)
         <Col xs="auto" className="d-flex flex-wrap gap-2">
           <Button variant="secondary" onClick={clearFilter}>Clear</Button>
           <Button variant="primary" onClick={todayFilter}>Today</Button>
-          <Button variant="outline-success">Export</Button>
+          <Button variant="outline-success" onClick={exportToExcel}>Export</Button>
+
         </Col>
       </Row>
 

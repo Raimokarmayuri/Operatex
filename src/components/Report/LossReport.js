@@ -6,13 +6,19 @@ import { Chart, registerables } from "chart.js";
 import * as XLSX from "xlsx";
 import { Container, Row, Col, Table, Card } from "react-bootstrap";
 import API_BASE_URL from "../config";
+import {
+  FaTimesCircle,
+  FaCalendarDay,
+  FaFileExcel,
+} from "react-icons/fa";
 // const API_BASE_URL = "http://localhost:5003";
-
 
 Chart.register(...registerables);
 
 const OEEReport = () => {
   const [machineId, setMachineId] = useState("");
+  const [selectedMachine, setSelectedMachine] = useState(null);
+
   const [machineIds, setMachineIds] = useState([]);
   const [oeeData, setOEEData] = useState([]);
   const [lossData, setLossData] = useState([]);
@@ -37,11 +43,15 @@ const OEEReport = () => {
   useEffect(() => {
     const fetchMachineIds = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/machines/getallmachine`);
-        const filtered = res.data.filter((m) => m.status === "Active" || m.status === "ACTIVE");
+        const res = await axios.get(
+          `${API_BASE_URL}/api/machines/getallmachine`
+        );
+        const filtered = res.data.filter(
+          (m) => m.status === "Active" || m.status === "ACTIVE"
+        );
         setMachineIds(filtered);
         if (filtered.length > 0) {
-          setMachineId(filtered[0].machine_id);
+          setSelectedMachine(filtered[0]);
         }
       } catch (err) {
         console.error("Error fetching machine IDs:", err);
@@ -51,7 +61,7 @@ const OEEReport = () => {
   }, []);
 
   useEffect(() => {
-    if (!machineId) return;
+    if (!selectedMachine) return;
     const fetchData = async () => {
       try {
         const [oeeRes, downtimeRes, rejectionRes] = await Promise.all([
@@ -60,9 +70,16 @@ const OEEReport = () => {
           axios.get(`${API_BASE_URL}/api/partrejections`),
         ]);
 
-        const oeeAll = oeeRes.data.filter((d) => d.machine_id === parseInt(machineId));
-        const downtimes = downtimeRes.data.filter((d) => d.machine_id === parseInt(machineId));
-        const rejections = rejectionRes.data.filter((r) => r.machine_id === parseInt(machineId));
+        const oeeAll = oeeRes.data.filter(
+          (d) => d.machine_id === parseInt(selectedMachine.machine_id)
+        );
+
+        const downtimes = downtimeRes.data.filter(
+          (d) => d.machine_id === parseInt(machineId)
+        );
+        const rejections = rejectionRes.data.filter(
+          (r) => r.machine_id === parseInt(machineId)
+        );
 
         const oeeMonth = oeeAll.filter(
           (e) => new Date(e.createdAt).getMonth() === selectedMonth
@@ -128,13 +145,34 @@ const OEEReport = () => {
           return { ...loss, dailyData };
         });
 
-        const totalOEE = oeeMonth.reduce((sum, e) => sum + parseFloat(e.OEE || 0), 0);
-        const totalPartsProduced = oeeMonth.reduce((sum, e) => sum + (e.TotalPartsProduced || 0), 0);
-        const totalPlannedQty = oeeMonth.reduce((sum, e) => sum + (e.expectedPartCount || 0), 0);
-        const totalDowntime = oeeMonth.reduce((sum, e) => sum + (e.downtimeDuration || 0), 0);
-        const defectiveParts = oeeMonth.reduce((sum, e) => sum + (e.defectiveParts || 0), 0);
-        const totalAvailability = oeeMonth.reduce((sum, e) => sum + parseFloat(e.availability || 0), 0);
-        const totalQuality = oeeMonth.reduce((sum, e) => sum + parseFloat(e.quality || 0), 0);
+        const totalOEE = oeeMonth.reduce(
+          (sum, e) => sum + parseFloat(e.OEE || 0),
+          0
+        );
+        const totalPartsProduced = oeeMonth.reduce(
+          (sum, e) => sum + (e.TotalPartsProduced || 0),
+          0
+        );
+        const totalPlannedQty = oeeMonth.reduce(
+          (sum, e) => sum + (e.expectedPartCount || 0),
+          0
+        );
+        const totalDowntime = oeeMonth.reduce(
+          (sum, e) => sum + (e.downtimeDuration || 0),
+          0
+        );
+        const defectiveParts = oeeMonth.reduce(
+          (sum, e) => sum + (e.defectiveParts || 0),
+          0
+        );
+        const totalAvailability = oeeMonth.reduce(
+          (sum, e) => sum + parseFloat(e.availability || 0),
+          0
+        );
+        const totalQuality = oeeMonth.reduce(
+          (sum, e) => sum + parseFloat(e.quality || 0),
+          0
+        );
 
         const avgOEE = totalOEE / oeeMonth.length;
         const avgPartsProduced = totalPartsProduced / oeeMonth.length;
@@ -164,7 +202,7 @@ const OEEReport = () => {
       }
     };
     fetchData();
-  }, [machineId, selectedMonth]);
+  }, [selectedMachine, selectedMonth]);
 
   const handleMachineChange = (event) => {
     setMachineId(event.target.value);
@@ -182,11 +220,23 @@ const OEEReport = () => {
     }
   };
 
-  const formatDate = (date) => new Date(date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+  const formatDate = (date) =>
+    new Date(date).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+    });
 
   const getDayStats = (dayIndex) => {
-    let oee = 0, availability = 0, quality = 0, totalPartsProduced = 0, plannedQty = 0, downtimeDuration = 0, defectiveParts = 0;
-    const filtered = oeeData.filter((e) => new Date(e.createdAt).getDate() === dayIndex + 1);
+    let oee = 0,
+      availability = 0,
+      quality = 0,
+      totalPartsProduced = 0,
+      plannedQty = 0,
+      downtimeDuration = 0,
+      defectiveParts = 0;
+    const filtered = oeeData.filter(
+      (e) => new Date(e.createdAt).getDate() === dayIndex + 1
+    );
     filtered.forEach((e) => {
       oee += parseFloat(e.OEE || 0);
       availability += parseFloat(e.availability || 0);
@@ -202,14 +252,22 @@ const OEEReport = () => {
       availability /= count;
       quality /= count;
     }
-    return { oee, availability, quality, totalPartsProduced, plannedQty, downtimeDuration, defectiveParts };
+    return {
+      oee,
+      availability,
+      quality,
+      totalPartsProduced,
+      plannedQty,
+      downtimeDuration,
+      defectiveParts,
+    };
   };
 
- return (
+  return (
     <div className="container3 mt-5">
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2 mb-2 p-2 border rounded bg-light">
         <div className="fs-4 fw-bold" style={{ color: "#034694" }}>
-          OEE Report {machineId}
+          OEE Report {selectedMachine?.machine_name_type || ""}
         </div>
         <div className="d-flex flex-wrap align-items-center justify-content-end gap-2">
           {/* <label htmlFor="machineSelect">Select Machine</label> */}
@@ -217,42 +275,47 @@ const OEEReport = () => {
             id="machineSelect"
             className="form-control form-control-sm fs-6"
             style={{ width: "150px" }}
-            value={machineId}
-            onChange={handleMachineChange}
+            value={selectedMachine?.machine_id || ""}
+            onChange={(e) => {
+              const selected = machineIds.find(
+                (m) => m.machine_id === parseInt(e.target.value)
+              );
+              setSelectedMachine(selected);
+            }}
           >
             {machineIds.map((machine) => (
               <option key={machine.machine_id} value={machine.machine_id}>
-                {machine.machine_id}
+                {machine.machine_name_type}
               </option>
             ))}
           </select>
-<div>
-          <select
-            id="monthSelect"
-            className="form-control form-control-sm fs-6"
-            value={selectedMonth}
-            onChange={handleMonthChange}
-          >
-            <option value={0}>January</option>
-            <option value={1}>February</option>
-            <option value={2}>March</option>
-            <option value={3}>April</option>
-            <option value={4}>May</option>
-            <option value={5}>June</option>
-            <option value={6}>July</option>
-            <option value={7}>August</option>
-            <option value={8}>September</option>
-            <option value={9}>October</option>
-            <option value={10}>November</option>
-            <option value={11}>December</option>
-          </select>
-</div>
+          <div>
+            <select
+              id="monthSelect"
+              className="form-control form-control-sm fs-6"
+              value={selectedMonth}
+              onChange={handleMonthChange}
+            >
+              <option value={0}>January</option>
+              <option value={1}>February</option>
+              <option value={2}>March</option>
+              <option value={3}>April</option>
+              <option value={4}>May</option>
+              <option value={5}>June</option>
+              <option value={6}>July</option>
+              <option value={7}>August</option>
+              <option value={8}>September</option>
+              <option value={9}>October</option>
+              <option value={10}>November</option>
+              <option value={11}>December</option>
+            </select>
+          </div>
           <button
             className="btn btn-lg btn-outline-success"
             onClick={exportToExcel}
             title="Export to Excel"
           >
-            <i className="fas fa-file-excel"></i>
+            <FaFileExcel className="me-1" />
           </button>
         </div>
       </div>
@@ -270,7 +333,7 @@ const OEEReport = () => {
             <div style={{ height: "400px", width: "100%" }}>
               <Line
                 data={{
-                  labels: oeeData.map((entry) => formatDate(entry.savedAt)),
+                  labels: oeeData.map((entry) => formatDate(entry.createdAt)),
                   datasets: [
                     {
                       label: "OEE (%)",
@@ -298,7 +361,7 @@ const OEEReport = () => {
                     },
                     {
                       label: "performance",
-                      data: oeeData.map((entry) => entry.quality || 0),
+                      data: oeeData.map((entry) => entry.performance || 0),
                       borderColor: "orange",
                       backgroundColor: "rgba(199, 45, 7, 0.2)",
                       borderWidth: 2,
@@ -338,13 +401,14 @@ const OEEReport = () => {
       </div>
 
       {/* Merged Monthly Summary and Loss Table */}
-      <div
+       <div
         className="table-responsive mt-4"
         style={{
           width: "100%",
           height: "700px",
           padding: "1rem",
-          overflowY: "",
+          overflowX: "scroll",
+          overflowY: "scroll", 
         }}
       >
         <Table
@@ -352,167 +416,169 @@ const OEEReport = () => {
           className="table table-bordered table-striped striped bordered hover"
           style={{ width: "100%" }}
         >
-          <thead>
-            <tr>
-              <th style={{ color: "#034694" }}>Machine Name</th>
-              <th style={{ color: "#034694" }}>Component</th>
-              {/* <th >Line Supervisor</th> */}
-              <th style={{ color: "#034694" }} colSpan="3">
-                OEE (%)
-              </th>
-              <th style={{ color: "#034694" }} colSpan="3">
-                Actual Production Data
-              </th>{" "}
-              {/* Merging OEE, Actual Production Qty, and Standard Production Qty into one group */}
-              <th style={{ color: "#034694" }} colSpan="3">
-                Standard Production Data
-              </th>
-              <th style={{ color: "#034694" }} colSpan="3">
-                Downtime (hr)
-              </th>
-              <th style={{ color: "#034694" }} colSpan="3">
-                Defect Part
-              </th>
-              <th style={{ color: "#034694" }} colSpan="3">
-                Availability (%)
-              </th>
-              <th style={{ color: "#034694" }} colSpan="3">
-                Quality (%)
-              </th>
-              {/* <th colSpan="3">Defect Part</th> */}
-              {/* <th colSpan="3">Machine Running Hrs</th>
-                  <th colSpan="3">Machine Maintenance Hrs</th> */}
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>{machineId}</td>
-              <td>{""}</td>
-              {/* <td>{""}</td> */}
-              <td colSpan="3">{summary.avgOEE.toFixed(2)}%</td>
-              <td colSpan="3">{summary.totalPartsProduced}</td>
-              <td colSpan="3">{summary.totalPlannedQty}</td>
-              <td colSpan="3">{summary.avgdowntimeDuration.toFixed(2)}</td>
-              <td colSpan="3">{summary.avgDefectPart}</td>
-              <td colSpan="3">{summary.avgAvailability.toFixed(2)}</td>
-              <td colSpan="3">{summary.avgQuality.toFixed(2)}</td>
-            </tr>
-          </tbody>
-          <thead
-            style={{
-              position: "sticky",
-              top: 1,
-              zIndex: 1020,
-            }}
-          >
-            <tr>
-              <th style={{ color: "#034694" }} rowSpan="2">
-                Sr. No
-              </th>
-              <th style={{ color: "#034694" }} rowSpan="2">
-                Category
-              </th>
-              <th style={{ color: "#034694" }} rowSpan="2">
-                Loss Name
-              </th>
-              <th style={{ color: "#034694" }} rowSpan="2">
-                Unit of Measurement (UOM)
-              </th>
-              <th style={{ color: "#034694" }} colSpan="31">
-                Days of{" "}
-                {new Date(2021, selectedMonth).toLocaleString("default", {
-                  month: "long",
-                })}
-              </th>
-            </tr>
-            <tr>
-              {daysOfMonth.map((_, index) => (
-                <th style={{ color: "#034694" }} key={index}>
-                  {index + 1}
+            <thead>
+              <tr>
+                <th style={{ color: "#034694" }}>Machine</th>
+                <th style={{ color: "#034694" }}>Component</th>
+                {/* <th >Line Supervisor</th> */}
+                <th style={{ color: "#034694" }} colSpan="3">
+                  OEE (%)
                 </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {lossData.map((loss, index) => (
-              <tr key={index}>
-                <td>{index + 1}</td>
-                <td>{loss.category}</td>
-                <td>{loss.reason}</td>
-                <td>Minutes</td>
-                {loss.dailyData.map((day, dayIndex) => (
-                  <td key={dayIndex}>{day}</td>
+                <th style={{ color: "#034694" }} colSpan="3">
+                  Actual Production Data
+                </th>{" "}
+                {/* Merging OEE, Actual Production Qty, and Standard Production Qty into one group */}
+                <th style={{ color: "#034694" }} colSpan="3">
+                  Standard Production Data
+                </th>
+                <th style={{ color: "#034694" }} colSpan="3">
+                  Downtime (hr)
+                </th>
+                <th style={{ color: "#034694" }} colSpan="3">
+                  Defect Part
+                </th>
+                <th style={{ color: "#034694" }} colSpan="3">
+                  Availability (%)
+                </th>
+                <th style={{ color: "#034694" }} colSpan="3">
+                  Quality (%)
+                </th>
+                {/* <th colSpan="3">Defect Part</th> */}
+                {/* <th colSpan="3">Machine Running Hrs</th>
+                  <th colSpan="3">Machine Maintenance Hrs</th> */}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{selectedMachine?.machine_name_type || ""}</td>
+
+                <td>{""}</td>
+                {/* <td>{""}</td> */}
+                <td colSpan="3">{summary.avgOEE.toFixed(2)}%</td>
+                <td colSpan="3">{summary.totalPartsProduced}</td>
+                <td colSpan="3">{summary.totalPlannedQty}</td>
+                <td colSpan="3">{summary.avgdowntimeDuration.toFixed(2)}</td>
+                <td colSpan="3">{summary.avgDefectPart}</td>
+                <td colSpan="3">{summary.avgAvailability.toFixed(2)}</td>
+                <td colSpan="3">{summary.avgQuality.toFixed(2)}</td>
+              </tr>
+            </tbody>
+            <thead
+              style={{
+                position: "sticky",
+                top: 1,
+                zIndex: 1020,
+              }}
+            >
+              <tr>
+                <th style={{ color: "#034694" }} rowSpan="2">
+                  Sr. No
+                </th>
+                <th style={{ color: "#034694" }} rowSpan="2">
+                  Category
+                </th>
+                <th style={{ color: "#034694" }} rowSpan="2">
+                  Loss Name
+                </th>
+                <th style={{ color: "#034694" }} rowSpan="2">
+                  Unit of Measurement (UOM)
+                </th>
+                <th style={{ color: "#034694" }} colSpan="31">
+                  Days of{" "}
+                  {new Date(2021, selectedMonth).toLocaleString("default", {
+                    month: "long",
+                  })}
+                </th>
+              </tr>
+              <tr>
+                {daysOfMonth.map((_, index) => (
+                  <th style={{ color: "#034694" }} key={index}>
+                    {index + 1}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
+            </thead>
+            <tbody>
+              {lossData.map((loss, index) => (
+                <tr key={index}>
+                  <td>{index + 1}</td>
+                  <td>{loss.category}</td>
+                  <td>{loss.reason}</td>
+                  <td>Minutes</td>
+                  {loss.dailyData.map((day, dayIndex) => (
+                    <td key={dayIndex}>{day}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
 
-          <tfoot>
-            <tr>
-              <td colSpan="4">OEE</td>
-              {daysOfMonth.map((_, dayIndex) => {
-                const { oee } = getDayStats(dayIndex);
-                return (
-                  <td key={dayIndex}>
-                    {oee !== null ? `${oee.toFixed(2)}%` : "..."}
-                  </td>
-                );
-              })}
-            </tr>
-            <tr>
-              <td colSpan="4">Availability</td>
-              {daysOfMonth.map((_, dayIndex) => {
-                const { availability } = getDayStats(dayIndex);
-                return (
-                  <td key={dayIndex}>
-                    {availability !== null
-                      ? `${availability.toFixed(2)}%`
-                      : "..."}
-                  </td>
-                );
-              })}
-            </tr>
-            <tr>
-              <td colSpan="4">Quality</td>
-              {daysOfMonth.map((_, dayIndex) => {
-                const { quality } = getDayStats(dayIndex);
-                return (
-                  <td key={dayIndex}>
-                    {quality !== null ? `${quality.toFixed(2)}%` : "..."}
-                  </td>
-                );
-              })}
-            </tr>
-            <tr>
-              <td colSpan="4">Actual Production Data </td>
-              {daysOfMonth.map((_, dayIndex) => {
-                const { totalPartsProduced } = getDayStats(dayIndex);
-                return <td key={dayIndex}>{totalPartsProduced}</td>;
-              })}
-            </tr>
-            <tr>
-              <td colSpan="4">standard Production Data </td>
-              {daysOfMonth.map((_, dayIndex) => {
-                const { plannedQty } = getDayStats(dayIndex);
-                return <td key={dayIndex}>{plannedQty}</td>;
-              })}
-            </tr>
-            <tr>
-              <td colSpan="4">Defect Parts </td>
-              {daysOfMonth.map((_, dayIndex) => {
-                const { defectiveParts } = getDayStats(dayIndex);
-                return <td key={dayIndex}>{defectiveParts}</td>;
-              })}
-            </tr>
-            <tr>
-              <td colSpan="4">Downtime (min)</td>
-              {daysOfMonth.map((_, dayIndex) => {
-                const { downtimeDuration } = getDayStats(dayIndex);
-                return <td key={dayIndex}>{downtimeDuration}</td>;
-              })}
-            </tr>
-          </tfoot>
-        </Table>
+            <tfoot>
+              <tr>
+                <td colSpan="4">OEE</td>
+                {daysOfMonth.map((_, dayIndex) => {
+                  const { oee } = getDayStats(dayIndex);
+                  return (
+                    <td key={dayIndex}>
+                      {oee !== null ? `${oee.toFixed(2)}%` : "..."}
+                    </td>
+                  );
+                })}
+              </tr>
+              <tr>
+                <td colSpan="4">Availability</td>
+                {daysOfMonth.map((_, dayIndex) => {
+                  const { availability } = getDayStats(dayIndex);
+                  return (
+                    <td key={dayIndex}>
+                      {availability !== null
+                        ? `${availability.toFixed(2)}%`
+                        : "..."}
+                    </td>
+                  );
+                })}
+              </tr>
+              <tr>
+                <td colSpan="4">Quality</td>
+                {daysOfMonth.map((_, dayIndex) => {
+                  const { quality } = getDayStats(dayIndex);
+                  return (
+                    <td key={dayIndex}>
+                      {quality !== null ? `${quality.toFixed(2)}%` : "..."}
+                    </td>
+                  );
+                })}
+              </tr>
+              <tr>
+                <td colSpan="4">Actual Production Data </td>
+                {daysOfMonth.map((_, dayIndex) => {
+                  const { totalPartsProduced } = getDayStats(dayIndex);
+                  return <td key={dayIndex}>{totalPartsProduced}</td>;
+                })}
+              </tr>
+              <tr>
+                <td colSpan="4">standard Production Data </td>
+                {daysOfMonth.map((_, dayIndex) => {
+                  const { plannedQty } = getDayStats(dayIndex);
+                  return <td key={dayIndex}>{plannedQty}</td>;
+                })}
+              </tr>
+              <tr>
+                <td colSpan="4">Defect Parts </td>
+                {daysOfMonth.map((_, dayIndex) => {
+                  const { defectiveParts } = getDayStats(dayIndex);
+                  return <td key={dayIndex}>{defectiveParts}</td>;
+                })}
+              </tr>
+              <tr>
+                <td colSpan="4">Downtime (min)</td>
+                {daysOfMonth.map((_, dayIndex) => {
+                  const { downtimeDuration } = getDayStats(dayIndex);
+                  return <td key={dayIndex}>{downtimeDuration}</td>;
+                })}
+              </tr>
+            </tfoot>
+          </Table>
+        </div>
         <h6
           className="text-end text-md-center mt-1"
           style={{ color: "red", fontWeight: "bold", fontSize: "px" }}
@@ -521,7 +587,7 @@ const OEEReport = () => {
           Report Generated on OperateX Powered by ThetaVega
         </h6>
       </div>
-    </div>
+    // </div>
   );
 };
 

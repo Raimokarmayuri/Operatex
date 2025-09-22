@@ -9,6 +9,9 @@ const PmcParameter = () => {
   const [machineIds, setMachineIds] = useState([]);
   const [selectedMachineId, setSelectedMachineId] = useState("");
   const [editingId, setEditingId] = useState(null);
+  const [filterMachine, setFilterMachine] = useState("");
+  const [filterParameterName, setFilterParameterName] = useState("");
+
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     machine_id: "",
@@ -138,8 +141,7 @@ const PmcParameter = () => {
       ok: param.ok || "",
       bit_position: param.bit_position || "",
       parameter_value: param.parameter_value || "",
-      boolean_expected_value:
-        param.boolean_expected_value === true ? "1" : "",
+      boolean_expected_value: param.boolean_expected_value === true ? "1" : "",
     });
     setEditingId(param.pmc_parameter_id);
     setShowForm(true);
@@ -178,12 +180,53 @@ const PmcParameter = () => {
         <div className="fs-4 fw-bold" style={{ color: "#034694" }}>
           Parameter Master
         </div>
-        {!showForm && (
-          <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-            + Add Parameter
-          </button>
-        )}
+        <button className="btn btn-primary" onClick={() => setShowForm(true)}>
+          + Add Parameter
+        </button>
+
+        <select
+          className="form-select"
+          style={{ maxWidth: "250px" }}
+          value={filterMachine}
+          onChange={(e) => setFilterMachine(e.target.value)}
+        >
+          <option value="">All Machines</option>
+          {machines.map((m) => (
+            <option key={m.machine_id} value={m.machine_id}>
+              {m.machine_name_type}
+            </option>
+          ))}
+        </select>
       </div>
+      {/* {!showForm && (
+        <div className="row g-2 mb-3">
+          <div className="col-md-4">
+            <label className="form-label">Filter by Machine</label>
+            <select
+              className="form-control"
+              value={filterMachine}
+              onChange={(e) => setFilterMachine(e.target.value)}
+            >
+              <option value="">All Machines</option>
+              {machines.map((m) => (
+                <option key={m.machine_id} value={m.machine_id}>
+                  {m.machine_name_type}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="col-md-4">
+            <label className="form-label">Filter by Parameter Name</label>
+            <input
+              type="text"
+              className="form-control"
+              value={filterParameterName}
+              onChange={(e) => setFilterParameterName(e.target.value)}
+              placeholder="Search by parameter..."
+            />
+          </div>
+        </div>
+      )} */}
 
       {!showForm ? (
         <table className="table table-bordered">
@@ -207,46 +250,57 @@ const PmcParameter = () => {
           </thead>
           <tbody>
             {parameters.length > 0 ? (
-              parameters.map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    {machines.find((m) => m.machine_id === p.machine_id)
-                      ?.machine_name_type || p.machine_id}
-                  </td>
-                  <td>{p.parameter_name}</td>
-                  <td>{p.register_address}</td>
-                  <td>
-                    {p.boolean_expected_value === true
-                      ? "True"
-                      : p.boolean_expected_value === false
-                      ? "False"
-                      : "-"}
-                  </td>
-                  <td>{p.ok}</td>
-                  <td>{p.min_value}</td>
-                  <td>{p.max_value}</td>
-                  <td>{p.unit}</td>
-                  <td>{p.alert_threshold}</td>
-                  <td>{p.data_collection_frequency}</td>
-                  <td>{p.data_type}</td>
-                  <td>{p.bit_position}</td>
-                  <td>{p.parameter_value}</td>
-                  <td>
-                    <button
-                      className="btn btn-sm text-primary"
-                      onClick={() => handleEdit(p)}
-                    >
-                      <BsPencil />
-                    </button>
-                    <button
-                      className="btn btn-sm text-danger"
-                      onClick={() => handleDelete(p.pmc_parameter_id)}
-                    >
-                      <BsTrash />
-                    </button>
-                  </td>
-                </tr>
-              ))
+              parameters
+                .filter((p) => {
+                  const matchesMachine =
+                    !filterMachine || String(p.machine_id) === filterMachine;
+                  const matchesParam =
+                    !filterParameterName ||
+                    p.parameter_name
+                      .toLowerCase()
+                      .includes(filterParameterName.toLowerCase());
+                  return matchesMachine && matchesParam;
+                })
+                .map((p) => (
+                  <tr key={p.id}>
+                    <td>
+                      {machines.find((m) => m.machine_id === p.machine_id)
+                        ?.machine_name_type || p.machine_id}
+                    </td>
+                    <td>{p.parameter_name}</td>
+                    <td>{p.register_address}</td>
+                    <td>
+                      {p.boolean_expected_value === true
+                        ? "True"
+                        : p.boolean_expected_value === false
+                        ? "False"
+                        : "-"}
+                    </td>
+                    <td>{p.ok}</td>
+                    <td>{p.min_value}</td>
+                    <td>{p.max_value}</td>
+                    <td>{p.unit}</td>
+                    <td>{p.alert_threshold}</td>
+                    <td>{p.data_collection_frequency}</td>
+                    <td>{p.data_type}</td>
+                    <td>{p.bit_position}</td>
+                    <td>{p.parameter_value}</td>
+                    <td>
+                      <button
+                        className="btn btn-sm text-primary"
+                        onClick={() => handleEdit(p)}
+                      >
+                        <BsPencil />
+                      </button>
+                      <button
+                        className="btn btn-sm text-danger"
+                        onClick={() => handleDelete(p.pmc_parameter_id)}
+                      >
+                        <BsTrash />
+                      </button>
+                    </td>
+                  </tr>
+                ))
             ) : (
               <tr>
                 <td colSpan="14" className="text-center">
@@ -408,7 +462,7 @@ const PmcParameter = () => {
               onChange={handleChange}
               required
             >
-              <option value="">Select Data Type</option> 
+              <option value="">Select Data Type</option>
               <option value="bit">Bit</option>
               <option value="byte">Byte</option>
               <option value="boolean">Boolean</option>
@@ -419,7 +473,7 @@ const PmcParameter = () => {
             </select>
           </div>
 
-                   <div className="col-md-4">
+          <div className="col-md-4">
             <label className="form-label">Ok</label>
             <select
               className="form-control"

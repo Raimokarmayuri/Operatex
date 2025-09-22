@@ -278,17 +278,23 @@ const Sidebar = ({ collapsed, toggleSidebar, isOpen, isMobileView }) => {
         //   text: "Breakdown History",
         //   path: "/breakdownhistory",
         // },
-        {
-          icon: <HiAdjustments size={18} className="text-primary" />,
-          text: "Workforce",
-          path: "/workforce",
-        },
+        // {
+        //   icon: <HiAdjustments size={18} className="text-primary" />,
+        //   text: "Workforce",
+        //   path: "/workforce",
+        // },
       
 
         {
           icon: <HiAdjustments size={18} className="text-primary" />,
           text: "Maintenance",
           path: "/addmaintenance",
+        },
+
+        {
+          icon: <HiAdjustments size={18} className="text-primary" />,
+          text: "Registered User",
+          path: "/register",
         },
        
         // {

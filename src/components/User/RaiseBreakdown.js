@@ -1,610 +1,410 @@
-// import React from 'react'
-
-// const RaiseBreakdown = () => {
-//   return (
-//     <div>RaiseBreakdown</div>
-//   )
-// }
-
-// export default RaiseBreakdown
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Select from "react-select"; // Importing react-select for searchable dropdown
+import Select from "react-select";
 import { BsPencil, BsTrash } from "react-icons/bs";
-// import * as XLSX from "xlsx";
+import * as XLSX from "xlsx";
 import { useNavigate } from "react-router-dom";
 import API_BASE_URL from "../config";
-import BackButton from '../BackButton';
 import { useAuth } from "../../context/AuthContext";
-
 
 const BreakdownForm = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const machineId = user?.machineId || "";
-
+  const machineId = user?.machine_id || ""; // ✅ Get machineId from logged-in user
 
   const [breakdowns, setBreakdowns] = useState([]);
   const [filteredBreakdowns, setFilteredBreakdowns] = useState([]);
-  const [machineIds, setMachineIds] = useState([]); // Machine IDs for dropdown
-  const [selectedMachineId, setSelectedMachineId] = useState(null);
+  const [machineList, setMachineList] = useState([]);
   const [isTodayFilter, setIsTodayFilter] = useState(false);
-  const [startDate, setStartDate] = useState(""); // Start Date Filter
-  const [endDate, setEndDate] = useState(""); // End Date Filter
-  const [showForm, setShowForm] = useState(false); // Show/hide add breakdown form
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editId, setEditId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
   const [techNames, setTechNames] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [editingId, setEditingId] = useState(null); // Track ID for editing
+  const [shiftOptions, setShiftOptions] = useState([]);
+    const getLocalDateTime = () => {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  return now.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:mm
+};
   const [formData, setFormData] = useState({
-    machineId: "",
-    breakdownReason: "",
-    breakdownStartDateTime: new Date().toISOString().slice(0, 16),
-    breakdownEndDateTime: "",
-    assignedTechnician: "",
-    breakdownType: "",
-    shift:"",
-    status: "open", // Default status
+    machine_id: machineId,
+    breakdown_reason: "",
+    breakdown_start: getLocalDateTime(), 
+
+    breakdown_end: "",
+    assigned_technician: "",
+    remark: "",
+    shift_no: "",
+    breakdown_type: "",
+    action_taken: "",
+    root_cause: "",
+    responsibility: "",
+    status: "open",
+    location: "",
+    user_id: "",
   });
-  // const [isTodayScheduleFilter, setIsTodayScheduleFilter] = useState(true); // Separate filter for today's schedule
-  // const [isTodayFilter, setIsTodayFilter] = useState(false);
-  const [isTodayScheduleFilter, setIsTodayScheduleFilter] = useState(false); // Track Today's Schedule filter
-  const [isScheduleActive, setIsScheduleActive] = useState(false); // Store table flag
 
-  // Function to export data to Excel
-  // const exportToExcel = () => {
-  //   const worksheet = XLSX.utils.json_to_sheet(filteredBreakdowns);
-  //   const workbook = XLSX.utils.book_new();
-  //   XLSX.utils.book_append_sheet(workbook, worksheet, "Breakdown Data");
 
-  //   // Trigger the download
-  //   XLSX.writeFile(workbook, "Breakdown_Report.xlsx");
-  // };
 
-  const filterTodaysSchedule = () => {
-    let today = new Date();
-    today.setHours(0, 0, 0, 0); // Start of today
-    let tomorrow = new Date();
-    tomorrow.setDate(today.getDate() + 1); // Start of next day
 
-    const filtered = breakdowns.filter((b) => {
-      const breakdownDate = new Date(b.breakdownStartDateTime);
-      return breakdownDate >= today && breakdownDate < tomorrow;
-    });
-
-    // console.log("Today's Scheduled Breakdowns:", filtered);
-    setFilteredBreakdowns(filtered);
-    setIsScheduleActive(true); // Set flag to show "Today's Schedule: True"
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredBreakdowns);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Breakdown Data");
+    XLSX.writeFile(workbook, "Breakdown_Report.xlsx");
   };
 
-  useEffect(() => {
-    fetchBreakdowns();
-    fetchShiftOptions();
-    fetchMachineData();
-    fetchTechnicianNames();
-  }, []);
+  const filterTodaysSchedule = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const filtered = breakdowns.filter((b) => {
+      const date = new Date(b.created_at);
+      return date >= today && date < tomorrow;
+    });
+    setFilteredBreakdowns(filtered);
+  };
 
   const fetchBreakdowns = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/breakdowns`);
-
-      // Process data: Sort and calculate duration
-      const processedBreakdowns = response.data
-        .map((breakdown) => {
-          const startTime = new Date(breakdown.breakdownStartDateTime);
-          const endTime = new Date(breakdown.breakdownEndDateTime);
-
-          const durationMs = endTime - startTime;
-          const durationHours = Math.floor(durationMs / (1000 * 60 * 60)); // Get hours
-          const durationMinutes = Math.floor(
-            (durationMs % (1000 * 60 * 60)) / (1000 * 60)
-          ); // Get remaining minutes
-          const formattedDuration = `${durationHours}h ${durationMinutes}m`;
-
+      const res = await axios.get(`${API_BASE_URL}/api/breakdown`);
+      const processed = res.data
+        .filter((b) => b.machine_id === machineId) // ✅ Filter by machineId
+        .map((b) => {
+          const start = new Date(b.breakdown_start);
+          const end = new Date(b.breakdown_end);
+          const durationMs = end - start;
+          const h = Math.floor(durationMs / 3600000);
+          const m = Math.floor((durationMs % 3600000) / 60000);
           return {
-            ...breakdown,
-            startTime: startTime.toLocaleString(), // Format date
-            endTime: endTime.toLocaleString(),
-            duration: formattedDuration, // Add formatted duration
+            ...b,
+            duration: `${h}h ${m}m`,
+            startTime: start.toLocaleString(),
+            endTime: end.toLocaleString(),
           };
-        })
- .filter(
-        (breakdown) =>
-          breakdown.status.toLowerCase() === "pending" &&
-          breakdown.machineId === user?.machineId // ✅ filter by machineId from user
-      );
-      // Sort by breakdown start time (latest first)
-      const sortedBreakdowns = processedBreakdowns.sort(
-        (a, b) =>
-          new Date(b.breakdownStartDateTime) -
-          new Date(a.breakdownStartDateTime)
-      );
-
-      setBreakdowns(sortedBreakdowns);
-      setFilteredBreakdowns(sortedBreakdowns);
-    } catch (error) {
-      console.error("Error fetching breakdown data:", error);
+        });
+      setBreakdowns(processed);
+      setFilteredBreakdowns(processed);
+    } catch (err) {
+      console.error("Error loading breakdowns", err);
     }
   };
 
-  // Fetch machine data for dropdown
   const fetchMachineData = async () => {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/api/machines/ORG001`
-      );
-      const machineOptions = response.data.map((machine) => ({
-        value: machine.machineId,
-        label: machine.machineId,
-      }));
-      setMachineIds(machineOptions);
-    } catch (error) {
-      // console.error("Error fetching machine data:", error);
+      const res = await axios.get(`${API_BASE_URL}/api/machines/getallmachine`);
+      setMachineList(res.data);
+    } catch (err) {}
+  };
+
+  const fetchShiftOptions = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/shifts`);
+      setShiftOptions(res.data);
+    } catch (err) {}
+  };
+
+  const fetchTechnicianNames = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/users`);
+      setTechNames(res.data);
+    } catch (err) {
+      console.error("Error loading technicians", err);
     }
   };
 
-  // Apply Filters on Click
   const applyFilters = () => {
     let filtered = [...breakdowns];
-
-    // Filter by Machine ID
-    if (selectedMachineId) {
-      filtered = filtered.filter(
-        (b) => b.machineId === selectedMachineId.value
-      );
-    }
-
-    // Filter by Date Range
-    if (startDate) {
-      filtered = filtered.filter(
-        (b) => new Date(b.breakdownStartDateTime) >= new Date(startDate)
-      );
-    }
-    if (endDate) {
-      filtered = filtered.filter(
-        (b) => new Date(b.breakdownEndDateTime) <= new Date(endDate)
-      );
-    }
-
-    // **Filter for Today's Breakdown Records**
+    if (startDate) filtered = filtered.filter((b) => new Date(b.breakdown_start) >= new Date(startDate));
+    if (endDate) filtered = filtered.filter((b) => new Date(b.breakdown_end) <= new Date(endDate));
     if (isTodayFilter) {
-      let today = new Date();
-      today.setHours(0, 0, 0, 0); // Start of today
-      let tomorrow = new Date();
-      tomorrow.setDate(today.getDate() + 1); // Start of next day
-
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
       filtered = filtered.filter((b) => {
-        const breakdownDate = new Date(b.breakdownStartDateTime);
-        return breakdownDate >= today && breakdownDate < tomorrow;
+        const d = new Date(b.breakdown_start);
+        return d >= today && d < tomorrow;
       });
-
-      // console.log("Filtered Today's Breakdowns:", filtered);
     }
-
     setFilteredBreakdowns(filtered);
-    setIsScheduleActive(false); // Reset flag when other filters apply
   };
 
-  // Handle form input changes
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const resetFilters = () => {
+    setStartDate("");
+    setEndDate("");
+    setIsTodayFilter(false);
+    setFilteredBreakdowns(breakdowns);
   };
 
-  // Submit new breakdown
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const payload = {
+      ...formData,
+      machine_id: machineId, // ✅ Force using logged-in user's machineId
+      shift_no: parseInt(formData.shift_no),
+      assigned_technician: techNames.find((u) => u.user_id === parseInt(formData.user_id))?.full_name || "",
+      breakdown_start: new Date(formData.breakdown_start).getLocalDateTime(), 
+      breakdown_end: new Date(formData.breakdown_end).getLocalDateTime(), 
+    };
     try {
-      const currentTimestamp = new Date().toISOString(); // Get current date-time in ISO format
-      const payload = { 
-        ...formData,
-        status: "open",
-        breakdownStartDateTime: currentTimestamp // Assign current timestamp
-      };
-  
-      await axios.post(`${API_BASE_URL}/api/breakdowns`, payload);
-      window.alert("Record created successfully!");
-      fetchBreakdowns();
-      resetForm();
-      setShowForm(false);
-    } catch (error) {
-      console.error("Error submitting form:", error);
-    }
-  };
-  
-
-
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this breakdown?")) {
-      try {
-        await axios.delete(`${API_BASE_URL}:5001/api/breakdowns/${id}`);
-        fetchBreakdowns();
-      } catch (error) {
-        // console.error("Error deleting breakdown:", error);
+      if (isEditing && editingId) {
+        await axios.put(`${API_BASE_URL}/api/breakdown/${editingId}`, payload);
+        alert("Breakdown updated successfully");
+      } else {
+        await axios.post(`${API_BASE_URL}/api/breakdown`, payload);
+        alert("Breakdown added successfully");
       }
+      fetchBreakdowns();
+      setShowForm(false);
+      setIsEditing(false);
+      setEditingId(null);
+      resetForm();
+    } catch (err) {
+      alert("Submission failed");
+      console.error(err);
     }
   };
 
   const resetForm = () => {
     setFormData({
-      machineName: "",
-      machineId: "",
-      breakdownReason: "",
-      // breakdownStartDateTime: new Date().toISOString().slice(0, 16),
-
-      breakdownEndDateTime: "",
-      assignedTechnician: "",
+      machine_id: machineId,
+      breakdown_reason: "",
+      breakdown_start: new Date().toISOString().slice(0, 16),
+      breakdown_end: "",
+      assigned_technician: "",
       remark: "",
-      shift: "",
-      lineName: "",
-      operations: "",
-      breakdownPhenomenons: "",
-      breakdownType: "",
-      actionTaken: "",
-      whyWhyAnalysis: "",
-      rootCause: "",
-      targetDate: "",
+      shift_no: "",
+      breakdown_type: "",
+      action_taken: "",
+      root_cause: "",
       responsibility: "",
-      hd: "",
       status: "open",
       location: "",
+      user_id: "",
     });
   };
 
-  const [shiftOptions, setShiftOptions] = useState([]); // Dynamic shifts
+  const handleEdit = (b) => {
+    const selectedUser = techNames.find((t) => t.full_name === b.assigned_technician);
+    setFormData({
+      ...b,
+      breakdown_start: new Date(b.breakdown_start).toISOString().slice(0, 16),
+      breakdown_end: new Date(b.breakdown_end).toISOString().slice(0, 16),
+      user_id: selectedUser?.user_id || "",
+    });
+    setIsEditing(true);
+    setEditingId(b.breakdown_id);
+    setShowForm(true);
+  };
 
-  // Fetch shifts dynamically from API
-  const fetchShiftOptions = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/api/shifts`);
-      setShiftOptions(response.data); // Assuming API returns an array of shifts
-    } catch (error) {
-      // console.error("Error fetching shift options:", error);
+  const handleDelete = async (id) => {
+    if (window.confirm("Delete this breakdown?")) {
+      try {
+        await axios.delete(`${API_BASE_URL}/api/breakdown/${id}`);
+        fetchBreakdowns();
+      } catch (err) {
+        console.error("Delete failed", err);
+      }
     }
   };
 
-  const fetchTechnicianNames = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/api/workforce`);
-      setTechNames(response.data);
-      setLoading(false);
-    } catch (err) {
-      setError("Error fetching technician names");
-      setLoading(false);
-    }
-  };
-
-  // Reset Filters
-  const resetFilters = () => {
-    setSelectedMachineId(null);
-    setStartDate("");
-    setEndDate("");
-    setIsTodayFilter(false);
-    setIsTodayScheduleFilter(true);
-    setFilteredBreakdowns(breakdowns);
-  };
-
-  const handleEditNavigate = (id) => {
-    navigate(`/editBD/${id}`);
-  };
-
-  const getLocalDateTime = () => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); // Adjust for timezone
-    return now.toISOString().slice(0, 16); // Format to YYYY-MM-DDTHH:MM
-  };
+  useEffect(() => {
+    fetchBreakdowns();
+    fetchMachineData();
+    fetchShiftOptions();
+    fetchTechnicianNames();
+  }, []);
 
   return (
-    <>
-    <BackButton />
-    
-    <div className="" style={{ marginTop: "2rem" }}>
-      {/* Centered Heading */}
-      {/* <h3 className="text-center mt-4">Breakdown</h3> */}
-      {/* Filter Section - Hide when form is open */}
-      {!showForm && (
-        <div className="d-flex justify-content-start align-items-start mb-3 flex-wrap">
-          {/* <div
-            className=" me-2 mb-1"
-            style={{ width: "350px", marginTop: "1.8rem" }}
-          >
-            <select
-              options={machineIds}
-              value={selectedMachineId}
-              onChange={(option) => setSelectedMachineId(option)}
-              placeholder="Select Machine ID"
-              isClearable
-            />
-          </div> */}
-          {/* <div className=" me-2 mb-1">
-            <label className="me-2" style={{ width: "250px" }}>
-              Start Date:
-            </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="form-control"
-            />
-          </div> */}
-          {/* <div className=" me-5 mb-1">
-            <label className="me-2" style={{ width: "250px" }}>
-              End Date:
-            </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="form-control"
-            />
-          </div> */}
-          {/* <h3 className=" me-2 mt-2 mb-1 text-end"> Raise Breakdown</h3> */}
-          <div>
-            {/* <button className="btn btn-primary me-2" onClick={applyFilters}>
-              Apply Filter
-            </button>
-            <button className="btn btn-primary me-2" title="Reset Filter" onClick={resetFilters}>
-            <i className="fas fa-sync-alt"></i>
-            </button> */}
+    <div className="container mt-4">
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h4 className="text-primary">Breakdowns</h4>
+        {!showForm && (
+          <button className="btn btn-primary" onClick={() => setShowForm(true)}>
+            + Add Breakdown
+          </button>
+        )}
+      </div>
 
-            {/* Toggle Between Today's Breakdown and All Breakdown */}
-            {!isTodayScheduleFilter ? (
-              <button
-                className="btn btn-primary me-2"
-                onClick={() => {
-                  setIsTodayScheduleFilter(true);
-                  filterTodaysSchedule();
-                }}
-              >
-                Today's Breakdown
-              </button>
-            ) : (
-              <button
-                className="btn btn-primary me-2"
-                onClick={() => {
-                  setIsTodayScheduleFilter(false);
-                  setFilteredBreakdowns(breakdowns);
-                }}
-              >
-                All Breakdown
-              </button>
-            )}
-            <button
-              className="btn btn-primary me-2"
-              onClick={() => setShowForm(true)}
-            >
-              Raise Breakdown
-            </button>
-            {/* <button className="btn btn-primary" onClick={exportToExcel}>
-              Export to Excel
-            </button> */}
-          </div>
+      {/* Filter section */}
+      {!showForm && (
+        <div className="d-flex gap-2 flex-wrap mb-3">
+          <input
+            type="date"
+            className="form-control"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+          <input
+            type="date"
+            className="form-control"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+          <button className="btn btn-outline-primary" onClick={applyFilters}>
+            Filter
+          </button>
+          <button className="btn btn-outline-secondary" onClick={resetFilters}>
+            Reset
+          </button>
+          <button className="btn btn-outline-success" onClick={exportToExcel}>
+            Export Excel
+          </button>
         </div>
       )}
 
-      {/* Add Breakdown Form */}
+      {/* Breakdown form */}
       {showForm && (
-        <form className="m-4" onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="border rounded p-4 mb-4">
           <div className="row">
             <div className="col-md-4">
-              <div className="form-group mb-3">
-                <label className="form-label">Machine ID</label>
-                {loading ? (
-                  <p>Loading machine IDs...</p>
-                ) : error ? (
-                  <p>{error}</p>
-                ) : (
-                  <Select
-                    options={machineIds}
-                    value={machineIds.find(
-                      (m) => m.value === formData.machineId
-                    )}
-                    onChange={(option) =>
-                      setFormData({ ...formData, machineId: option.value })
-                    }
-                    placeholder="Select Machine"
-                  />
-                )}
-              </div>
+              <label>Breakdown Start</label>
+              <input
+                type="datetime-local"
+                className="form-control"
+                value={formData.breakdown_start}
+                onChange={(e) => setFormData({ ...formData, breakdown_start: e.target.value })}
+                required
+              />
             </div>
             <div className="col-md-4">
-              <div className="form-group mb-3">
-                <label className="form-label">Location</label>
-                <input
-                  required
-                  type="text"
-                  name="location"
-                  className="form-control form-control-sm"
-                  value={formData.location}
-                  onChange={handleChange}
-                />
-              </div>
+              <label>Breakdown End</label>
+              <input
+                type="datetime-local"
+                className="form-control"
+                value={formData.breakdown_end}
+                onChange={(e) => setFormData({ ...formData, breakdown_end: e.target.value })}
+                required
+              />
             </div>
             <div className="col-md-4">
-              <div className="form-group mb-3">
-                <label className="form-label">Breakdown Type</label>
-                <select
-                  required
-                  type="text"
-                  name="breakdownType"
-                  className="form-control form-control-sm"
-                  value={formData.breakdownType}
-                  onChange={handleChange}
-                >
-                 <option value="">Select an option</option>
-                  <option value="Mechanical">Mechanical</option>
-                  <option value="Electrical">Electrical</option>
-                  <option value="Electronic">Electronic</option>
-                  <option value="Hydrolic">Hydrolic</option>
-                  <option value="Neumatic">Neumatic</option>
-                  <option value="Production Setting">Production Setting</option>
-                  </select>
-              </div>
+              <label>Reason</label>
+              <input
+                type="text"
+                className="form-control"
+                value={formData.breakdown_reason}
+                onChange={(e) => setFormData({ ...formData, breakdown_reason: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="col-md-4">
+              <label>Technician</label>
+              <select
+                className="form-control"
+                value={formData.user_id}
+                onChange={(e) => setFormData({ ...formData, user_id: parseInt(e.target.value) })}
+              >
+                <option value="">Select Technician</option>
+                {techNames.map((t) => (
+                  <option key={t.user_id} value={t.user_id}>
+                    {t.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="col-md-4">
+              <label>Shift No</label>
+              <select
+                className="form-control"
+                value={formData.shift_no}
+                onChange={(e) => setFormData({ ...formData, shift_no: e.target.value })}
+              >
+                <option value="">Select Shift</option>
+                {shiftOptions.map((s) => (
+                  <option key={s.shift_no} value={s.shift_no}>
+                    {s.shift_no}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="col-md-4">
+              <label>Status</label>
+              <select
+                className="form-control"
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              >
+                <option value="open">Open</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+
+            <div className="col-md-6">
+              <label>Remark</label>
+              <textarea
+                className="form-control"
+                rows={2}
+                value={formData.remark}
+                onChange={(e) => setFormData({ ...formData, remark: e.target.value })}
+              />
             </div>
           </div>
 
-          <div className="row">
-            {/* <div className="col-md-4">
-              <div className="form-group mb-3">
-                <label className="form-label">Breakdown End Date</label>
-                <input
-                  required
-                  type="datetime-local"
-                  name="breakdownEndDateTime"
-                  className="form-control form-control-sm"
-                  value={formData.breakdownEndDateTime}
-                  onChange={handleChange}
-                />
-              </div>
-            </div> */}
-            <div className="col-md-4">
-              <div className="form-group mb-3">
-                <label>Shift Number</label>
-                <select
-                  name="shift" // Add the name attribute to match formData key
-                  className="form-control"
-                  value={formData.shift} // Bind value to formData.shift
-                  onChange={handleChange} // Use the handleInputChange function
-                  required
-                >
-                  <option value="">Select Shift</option>
-                  {shiftOptions.map((option) => (
-                    <option key={option.shiftNumber} value={option.shiftNumber}>
-                      {option.shiftNumber || `Shift ${option.shiftNumber}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <div className="form-group mb-3">
-                <label className="form-label">Assigned Technician</label>
-                {loading ? (
-                  <p>Loading...</p>
-                ) : error ? (
-                  <p>{error}</p>
-                ) : (
-                  <select
-                    required
-                    name="assignedTechnician"
-                    className="form-control form-control-sm"
-                    value={formData.assignedTechnician}
-                    onChange={handleChange}
-                  >
-                    <option value="">Select a technician</option>
-                    {techNames.map((name, index) => (
-                      <option key={index} value={name}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="d-flex justify-content-start mb-5">
-            <button type="submit" title="Add Production Data" className="btn btn-primary btn-sm me-2">
-            <i className="fas fa-file-medical"></i>     
+          <div className="mt-3">
+            <button type="submit" className="btn btn-primary me-2">
+              Submit
             </button>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => {
-                resetForm();
-                setShowForm(false);
-              }}
-            >
+            <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)}>
               Cancel
             </button>
           </div>
         </form>
       )}
 
-      {/* Breakdown List */}
+      {/* Breakdown Table */}
       {!showForm && (
-        <div
-          className="table-responsive"
-          style={{ maxHeight: "500px", overflowY: "auto" }}
-        >
-          <table
-        className="table table-bordered table-hover mt-4"
-        style={{
-          fontSize: "0.9rem", // Reduce font size
-          lineHeight: "1.2", // Adjust line height
-        }}
-      >
-        <thead
-          className="table-light"
-          style={{
-            position: "sticky",
-            top: 1,
-            zIndex: 1020,
-          }}
-        >
-         
+        <div className="table-responsive">
+          <table className="table table-bordered table-hover">
+            <thead className="table-light">
               <tr>
-              <th style={{ padding: "10px", color: "#034694"  }}> Date</th>
-                <th style={{ padding: "10px", color: "#034694"  }}>Machine ID</th>
-                <th style={{ padding: "10px", color: "#034694"  }}>Technician</th>
-                <th style={{ padding: "10px", color: "#034694"  }}>Breakdown Reason</th>
-                <th style={{ padding: "10px", color: "#034694"  }}>Breakdown Duration</th>
-                <th style={{ padding: "10px", color: "#034694"  }}>Start Date</th>
-                <th style={{ padding: "10px", color: "#034694"  }}>End Date</th>
-              
-
-               
-                <th style={{ padding: "10px" }}>Status</th>
+                <th>Date</th>
+                <th>Reason</th>
+                <th>Technician</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Duration</th>
+                <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
-            <tbody className="text-center">
-              {filteredBreakdowns.length > 0 ? (
-                filteredBreakdowns.map((breakdown) => (
-                  <tr key={breakdown._id}>
-                     <td style={{ padding: "10px" }}>{new Date(breakdown.date).toLocaleDateString()}</td>
-                    <td style={{ padding: "10px" }}>{breakdown.machineId}</td>
-                    <td style={{ padding: "10px" }}>
-                      {breakdown.assignedTechnician}
-                    </td>
-                    <td style={{ padding: "10px" }}>
-                      {breakdown.breakdownReason}
-                    </td>
-                    <td style={{ padding: "8px" }}>{breakdown.duration}</td>
-                    <td style={{ padding: "10px" }}>
-                      {new Date(
-                        breakdown.breakdownStartDateTime
-                      ).toLocaleString()}
-                    </td>
-                    <td style={{ padding: "10px" }}>
-                      {new Date(
-                        breakdown.breakdownEndDateTime
-                      ).toLocaleString()}
-                    </td>
-                   
-                   
-                    <td style={{ padding: "10px" }}>{breakdown.status}</td>
+            <tbody>
+              {filteredBreakdowns.length ? (
+                filteredBreakdowns.map((b) => (
+                  <tr key={b.breakdown_id}>
+                    <td>{new Date(b.created_at).toLocaleDateString()}</td>
+                    <td>{b.breakdown_reason}</td>
+                    <td>{b.assigned_technician}</td>
+                    <td>{b.startTime}</td>
+                    <td>{b.endTime}</td>
+                    <td>{b.duration}</td>
+                    <td>{b.status}</td>
                     <td>
                       <button
-                        className="btn border-0 bg-transparent text-dark btn-sm me-2"
-                        onClick={() => handleEditNavigate(breakdown._id)}
+                        className="btn btn-sm btn-outline-primary me-2"
+                        onClick={() => handleEdit(b)}
                       >
-                        <BsPencil className="me-1" style={{ color: "blue" }} />
+                        <BsPencil />
                       </button>
                       <button
-                        className="btn border-0 bg-transparent text-danger btn-sm"
-                        onClick={() => handleDelete(breakdown._id)}
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => handleDelete(b.breakdown_id)}
                       >
-                        <BsTrash className="me-1" style={{ color: "red" }} />
+                        <BsTrash />
                       </button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center text-danger">
+                  <td colSpan="8" className="text-center text-danger">
                     No breakdowns found
                   </td>
                 </tr>
@@ -614,7 +414,6 @@ const BreakdownForm = () => {
         </div>
       )}
     </div>
-    </>
   );
 };
 

@@ -1,11 +1,33 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Table, Button, Form } from "react-bootstrap";
-import { useAuth } from "../../context/AuthContext";
-import BackButton from "../BackButton";
+import "bootstrap/dist/css/bootstrap.min.css";
+import { BsPencil } from "react-icons/bs";
 import API_BASE_URL from "../config";
+// const API_BASE_URL = "http://192.168.29.244:5003";
+import Select from "react-select";
 
- const downtimeReasons = [
+const DowntimeForm = () => {
+  const machine_id = localStorage.getItem("selectedmachine_id");
+  const [downtimes, setDowntimes] = useState([]);
+  
+  const [formData, setFormData] = useState({
+    machine_id: machine_id,
+    shift_no: "",
+    plan_id: "",
+    downtime_reason: "",
+    duration: "",
+    category: "",
+    linked: "",
+    remark: "",
+    start_timestamp: "",
+    end_timestamp: "",
+    date: "",
+    status: true
+  });
+  const [editId, setEditId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+
+    const downtimeReasons = [
     {
       id: 1,
       reason: "Equipment Failure (Breakdown)",
@@ -130,435 +152,212 @@ import API_BASE_URL from "../config";
       linked: "Other",
     },
   ];
-
-const DowntimeTable = () => {
-  const [data, setData] = useState([]);
-  const [allData, setAllData] = useState([]); // For storing all downtime data
-  // const [editId, setEditId] = useState(null);
-  const [editData, setEditData] = useState({});
-  const [showAll, setShowAll] = useState(false); // Track whether to show all downtimes or current
-  const [customReason, setCustomReason] = useState("");
-  const [showForm, setShowForm] = useState(false);
-    const [isEditMode, setIsEditMode] = useState(false);
-    const [editId, setEditId] = useState(null);
-  const [machines, setMachines] = useState([]);
-
-
-  const { user } = useAuth();
-  const machineId = user?.machineId || "";
+  
+  const fetchDowntimes = async () => {
+    try {
+      const res = await axios.get(
+        `${API_BASE_URL}/api/downtimes/bymachineid/${machine_id}`
+      );
+      setDowntimes(res.data);
+    } catch (err) {
+      console.error("Error fetching downtimes:", err);
+    }
+  };
 
   useEffect(() => {
-    if (showAll) {
-      fetchAllDowntime(); // If we're showing all, fetch all data
-    } else {
-      fetchCurrentDowntime(); // If we're showing current downtime, fetch specific machine data
-    }
-  }, [machineId, showAll]); // Fetch based on machineId or showAll state
-
-  // Fetch current downtime for the specific machine
-  const fetchCurrentDowntime = async () => {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/api/downtime/runningplanid/${machineId}`
-      );
-      setData(response.data);
-    } catch (error) {
-      console.error("Error fetching current downtime data:", error);
-    }
-  };
-
-  
-  // Fetch all downtime data
-  const fetchAllDowntime = async () => {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/api/downtime/machine/${machineId}`
-      );
-      setAllData(response.data);
-      setData(response.data); // Update the table to show all downtime data
-    } catch (error) {
-      console.error("Error fetching all downtime data:", error);
-    }
-  };
-
-  // Show current downtime (for the specific machine)
-  const showCurrentDowntime = () => {
-    setShowAll(false); // Switch back to current downtime view
-  };
-
-  // Show all downtime
-  const showAllDowntime = () => {
-    setShowAll(true); // Switch to showing all downtime
-  };
+    fetchDowntimes();
+  }, [machine_id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    if (name === "DownTimeReason") {
-      const matchedReason = downtimeReasons.find((r) => r.reason === value);
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-        category: matchedReason?.category || "",
-        linked: matchedReason?.linked || "",
-      }));
-
-      // Reset customReason if not "Other"
-      if (value !== "Other") {
-        setCustomReason("");
-      }
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-   const [formData, setFormData] = useState({
-      machineId: machineId,
-      DownTimeReason: "",
-      duration: "",
-      category: "",
-      status: "",
-      linked: "",
-      remark: "",
-      shiftNumber: "",
-      startTimestamp: "",
-      endTimestamp: "",
-      date: "",
-    });
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editId) {
+        await axios.put(`${API_BASE_URL}/api/downtimes/${editId}`, formData);
+      }
+      fetchDowntimes();
+      setShowForm(false);
+      setEditId(null);
+    } catch (err) {
+      console.error("Error submitting downtime:", err);
+    }
+  };
+const handleEdit = (dt) => {
+  const formatLocalDateTime = (dateStr) => {
+    const date = new Date(dateStr);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+  };
 
-  const resetForm = () => {
   setFormData({
-    machineId: user?.machineId || "",
-    DownTimeReason: "",
-    duration: "",
-    category: "",
-    linked: "",
-    remark: "",
-    shiftNumber: "",
-    startTimestamp: "",
-    endTimestamp: "",
-    date: "",
+    machine_id: dt.machine_id,
+    shift_no: dt.shift_no,
+    plan_id: dt.plan_id,
+    downtime_reason: dt.downtime_reason,
+    duration: dt.duration,
+    category: dt.category,
+    linked: dt.linked,
+    remark: dt.remark,
+    start_timestamp: formatLocalDateTime(dt.start_timestamp),
+    end_timestamp: formatLocalDateTime(dt.end_timestamp),
+    date: new Date(dt.date).toISOString().split("T")[0], // Just the date in YYYY-MM-DD
+    status: dt.status
   });
-  setCustomReason("");
-  setShowForm(false);
-  setIsEditMode(false);
-  setEditId(null);
+  setEditId(dt.id);
+  setShowForm(true);
 };
 
 
- const handleSubmit = async (e) => {
-     e.preventDefault();
- 
-     try {
-       const requestData = {
-         ...formData,
-         DownTimeReason:
-           formData.DownTimeReason === "Other"
-             ? customReason
-             : formData.DownTimeReason,
-         status: false,
-         startTimestamp: new Date(formData.startTimestamp).toISOString(),
-         endTimestamp: new Date(formData.endTimestamp).toISOString(),
-       };
- 
-       if (isEditMode && editId) {
-         // Update existing downtime
-         await axios.put(`${API_BASE_URL}/api/downtime/${editId}`, requestData);
-       } else {
-         // Add new downtime
-         await axios.post(`${API_BASE_URL}/api/downtime`, requestData);
-       }
- 
-       fetchAllDowntime(); // Refresh data
-       resetForm(); // Reset the form
-     } catch (error) {
-       // console.error("Error saving downtime record:", error);
-     }
-   };
-
-     const handleEdit = (downtime) => {
-    setFormData({
-      ...downtime,
-      startTimestamp: new Date(
-        new Date(downtime.startTimestamp).getTime() + 5.5 * 60 * 60 * 1000
-      ) // Adding 5 hours 30 minutes
-        .toISOString()
-        .slice(0, 16),
-      endTimestamp: new Date(
-        new Date(downtime.endTimestamp).getTime() + 5.5 * 60 * 60 * 1000
-      ) // Adding 5 hours 30 minutes
-        .toISOString()
-        .slice(0, 16),
-      date: new Date(new Date(downtime.date).getTime() + 5.5 * 60 * 60 * 1000) // Adding 5 hours 30 minutes
-        .toISOString()
-        .split("T")[0],
-    });
-
-    setEditId(downtime._id); // Set the ID of the downtime being edited
-    setIsEditMode(true); // Enable Edit Mode
-    setShowForm(true); // Show the form
-  };
-
   return (
-    <>
-      <BackButton />
+    <div className="mt-4">
+      <h2 style={{ color: "#034694" }}>Downtime Records</h2>
 
-      <div className=" mt-2 ms-3">
-        {/* <h2>Downtime Records for Machine: {machineId}</h2> */}
-
-        {/* Toggle button between current and all downtimes */}
-        {!showAll && (
-          <Button variant="primary" onClick={showAllDowntime} className="mb-3">
-            Show All Downtimes
-          </Button>
-        )}
-        {showAll && (
-          <>
-            <Button
-              variant="secondary"
-              onClick={showCurrentDowntime}
-              className="mb-3"
-            >
-              Show Current Downtime
-            </Button>
-          </>
-        )}
-
-         {showForm && (
-        <form onSubmit={handleSubmit}>
+      {showForm && (
+        <form onSubmit={handleSubmit} className="mb-4">
           <div className="row">
             <div className="col-md-4 mb-3">
               <label>Machine ID</label>
-  <input
-    type="text"
-    className="form-control"
-    value={formData.machineId}
-    readOnly
-  />
+              <input type="text" name="machine_id" className="form-control" value={formData.machine_id} readOnly />
             </div>
             <div className="col-md-4 mb-3">
-              <label>Downtime Reason</label>
-              <select
-                name="DownTimeReason"
-                className="form-control"
-                value={formData.DownTimeReason}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select Reason</option>
-                {[
-                  ...downtimeReasons.map((reason) => reason.reason),
-                  // Add the current value if it's not in predefined list
-                  ...(formData.DownTimeReason &&
-                  !downtimeReasons.some(
-                    (r) => r.reason === formData.DownTimeReason
-                  )
-                    ? [formData.DownTimeReason]
-                    : []),
-                ].map((reasonOption, index) => (
-                  <option key={index} value={reasonOption}>
-                    {reasonOption}
-                  </option>
-                ))}
-              </select>
+              <label>Shift No</label>
+              <input type="number" name="shift_no" className="form-control" value={formData.shift_no} onChange={handleChange} required />
             </div>
-
-            {formData.DownTimeReason === "Other" && (
-              <div className="col-md-4 mb-3">
-                <label>Custom Reason</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={customReason}
-                  onChange={(e) => setCustomReason(e.target.value)}
-                  required
-                />
-              </div>
-            )}
+            <div className="col-md-4 mb-3">
+              <label>Plan ID</label>
+              <input type="number" name="plan_id" className="form-control" value={formData.plan_id} onChange={handleChange} required />
+            </div>
+            {/* <div className="col-md-4 mb-3">
+              <label>Reason</label>
+              <input type="text" name="downtime_reason" className="form-control" value={formData.downtime_reason} onChange={handleChange} required />
+            </div> */}
+             <div className="col-md-4">
+                          <label>Downtime Reason</label>
+                          <Select
+                            options={downtimeReasons.map((d) => ({
+                              label: d.reason,
+                              value: d.reason,
+                              category: d.category,
+                              linked: d.linked,
+                            }))}
+                            value={
+                              formData.downtime_reason
+                                ? {
+                                    label: formData.downtime_reason,
+                                    value: formData.downtime_reason,
+                                  }
+                                : null
+                            }
+                            onChange={(selected) => {
+                              setFormData({
+                                ...formData,
+                                downtime_reason: selected.value,
+                                category: selected.category,
+                                linked: selected.linked,
+                              });
+                            }}
+                            required
+                          />
+                        </div>
             <div className="col-md-4 mb-3">
               <label>Category</label>
-              <input
-                type="text"
-                name="category"
-                className="form-control"
-                value={formData.category}
-                readOnly={isEditMode}
-              />
+              <input type="text" name="category" className="form-control" value={formData.category} onChange={handleChange} required />
             </div>
             <div className="col-md-4 mb-3">
               <label>Linked</label>
-              <input
-                type="text"
-                name="linked"
-                className="form-control"
-                value={formData.linked}
-                readOnly={isEditMode}
-              />
-            </div>
-            <div className="col-md-4 mb-3">
-              <label>Duration (minutes)</label>
-              <input
-                type="number"
-                name="duration"
-                className="form-control"
-                value={formData.duration}
-                onChange={handleChange}
-                required
-                readOnly={isEditMode}
-              />
-            </div>
-            <div className="col-md-4 mb-3">
-              <label>Shift Number</label>
-              <input
-                type="number"
-                name="shiftNumber"
-                className="form-control"
-                value={formData.shiftNumber}
-                onChange={handleChange}
-                required
-                readOnly={isEditMode}
-              />
+              <input type="text" name="linked" className="form-control" value={formData.linked} onChange={handleChange} />
             </div>
             <div className="col-md-4 mb-3">
               <label>Remark</label>
-              <input
-                type="text"
-                name="remark"
-                className="form-control"
-                value={formData.remark}
-                onChange={handleChange}
-              />
+              <input type="text" name="remark" className="form-control" value={formData.remark} onChange={handleChange} />
+            </div>
+            <div className="col-md-4 mb-3">
+              <label>Duration (min)</label>
+              <input type="number" name="duration" className="form-control" value={formData.duration} onChange={handleChange} required />
             </div>
             <div className="col-md-4 mb-3">
               <label>Start Timestamp</label>
-              <input
-                type="datetime-local"
-                name="startTimestamp"
-                className="form-control"
-                value={formData.startTimestamp}
-                onChange={handleChange}
-                required
-                // readOnly={isEditMode}
-              />
+              <input type="datetime-local" name="start_timestamp" className="form-control" value={formData.start_timestamp} onChange={handleChange} required />
             </div>
             <div className="col-md-4 mb-3">
               <label>End Timestamp</label>
-              <input
-                type="datetime-local"
-                name="endTimestamp"
-                className="form-control"
-                value={formData.endTimestamp}
-                onChange={handleChange}
-                required
-                // readOnly={isEditMode}
-              />
+              <input type="datetime-local" name="end_timestamp" className="form-control" value={formData.end_timestamp} onChange={handleChange} required />
             </div>
             <div className="col-md-4 mb-3">
               <label>Date</label>
-              <input
-                type="date"
-                name="date"
-                className="form-control"
-                value={formData.date}
-                onChange={handleChange}
-                required
-                readOnly={isEditMode}
-              />
+              <input type="date" name="date" className="form-control" value={formData.date} onChange={handleChange} required />
             </div>
           </div>
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={!isEditMode && !formData.DownTimeReason}
-          >
-            {isEditMode ? "Update Downtime" : "Save Downtime"}
+          <button type="submit" className="btn btn-primary">
+            {editId ? "Update" : "Submit"}
           </button>
-          <button
-            type="button"
-            className="btn btn-secondary ms-2"
-            onClick={resetForm}
-          >
-            Cancel
-          </button>
+          
         </form>
       )}
-
-       {!showForm && (
-        <div
-          className="table-responsive"
-          style={{ maxHeight: "500px", overflowY: "auto" }}
-        >
-          <table
-            className="table table-bordered table-hover mt-4"
-            style={{
-              fontSize: "0.9rem", // Reduce font size
-              lineHeight: "1.2", // Adjust line height
-            }}
-          >
-            <thead
-              className="table-light"
-              style={{
-                position: "sticky",
-                top: 1,
-                zIndex: 1020,
-              }}
-            >
-              <tr>
-                <th style={{ padding: "10px", color: "#034694" }}>MachineID</th>
-                <th style={{ padding: "10px", color: "#034694" }}>
-                  ShiftNumber
-                </th>
-                <th style={{ padding: "10px", color: "#034694" }}>
-                  DownTimeReason
-                </th>
-                <th style={{ padding: "10px", color: "#034694" }}>Category</th>
-                <th style={{ padding: "10px", color: "#034694" }}>
-                  StartTimestamp
-                </th>
-                <th style={{ padding: "10px", color: "#034694" }}>
-                  EndTimestamp
-                </th>
-                <th style={{ padding: "10px", color: "#034694" }}>
-                  Duration(min)
-                </th>
-                {/* <th style={{ padding: "10px", color: "#034694" }}>Remark</th> */}
-                <th style={{ padding: "10px", color: "#034694" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((item) => (
-                <tr key={item._id}>
-                  <td>{item.machineId}</td>
-                  <td>{item.shiftNumber}</td>
-                  <td style={{ padding: "10px" }}>{item.DownTimeReason}</td>
-                  <td style={{ padding: "10px" }}>
-                    {editId === item._id ? editData.category : item.category}
-                  </td>
-                  <td style={{ padding: "10px" }}>
-                    {new Date(item.startTimestamp).toLocaleString()}
-                  </td>
-                  <td style={{ padding: "10px" }}>
-                    {new Date(item.endTimestamp).toLocaleString()}
-                  </td>
-                  <td style={{ padding: "10px" }}>{item.duration}</td>
-                  {/* <td style={{ padding: "10px" }}>{item.remark}</td> */}
-                  <td style={{ padding: "10px" }}>
-                    <Button variant="warning"  onClick={() => handleEdit(item)}>
-                      Edit
-                    </Button>
+{!showForm ? (
+      <div className="table-responsive">
+        <table className="table table-bordered table-hover mt-3">
+          <thead className="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Machine ID</th>
+              <th>Shift No</th>
+              <th>Downtime Reason</th>
+              <th>Duration</th>
+              <th>Category</th>
+              <th>Linked</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Remark</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {downtimes.length > 0 ? (
+              downtimes.map((dt) => (
+                <tr key={dt.id}>
+                  <td>{new Date(dt.date).toLocaleDateString()}</td>
+                  <td>{dt.machine_id}</td>
+                  <td>{dt.shift_no}</td>
+                  <td>{dt.downtime_reason}</td>
+                  <td>{dt.duration} min</td>
+                  <td>{dt.category}</td>
+                  <td>{dt.linked}</td>
+                  <td>{new Date(dt.start_timestamp).toLocaleString("en-GB", { hour12: false })}</td>
+                  <td>{new Date(dt.end_timestamp).toLocaleString("en-GB", { hour12: false })}</td>
+                  <td>{dt.remark}</td>
+                  <td>
+                    <button className="btn btn-sm btn-light" onClick={() => handleEdit(dt)}>
+                      <BsPencil style={{ color: "blue" }} />
+                    </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-         )}
+              ))
+            ) : (
+              <tr>
+                <td colSpan="11" className="text-center text-danger">
+                  No records found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
-    </>
+      ) : (
+        <button className="btn btn-secondary mb-3" onClick={() => setShowForm(false)}>
+          Cancel
+        </button>
+      )}
+    </div>
   );
 };
 
-export default DowntimeTable;
+export default DowntimeForm;
